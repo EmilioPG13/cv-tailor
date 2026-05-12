@@ -7,7 +7,9 @@
       "Bash(ls /mnt/c/Users/Emili/Desktop/Code/cv-tailor/client/src/)",
       "Read(//mnt/c/Users/Emili/Desktop/Code/cv-tailor/client/**)",
       "Bash(npm run *)",
-      "Bash(chmod +x \"c:/Users/Emili/Desktop/Code/cv-tailor/start.sh\")"
+      "Bash(chmod +x \"c:/Users/Emili/Desktop/Code/cv-tailor/start.sh\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
