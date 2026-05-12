@@ -157,7 +157,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             </NavLink>
           ))}
           <a
-            href="https://github.com/emiliopg/cv-tailor"
+            href="https://github.com/EmilioPG13/cv-tailor"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-md px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--muted)] hover:text-[var(--fg)] transition-colors"
@@ -194,7 +194,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
 
           {/* GitHub Star */}
           <a
-            href="https://github.com/emiliopg/cv-tailor"
+            href="https://github.com/EmilioPG13/cv-tailor"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--bg)] hover:text-[var(--fg)] transition-colors"
