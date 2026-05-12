@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { STRINGS } from './data/strings.js';
 import { SAMPLE } from './data/sample.js';
@@ -10,6 +11,8 @@ import {
   IconWand, IconFile, IconBriefcase, IconUpload, IconGithub, IconGlobe,
   IconSettings, IconHistory, IconBolt, IconTarget,
 } from './components/ui.jsx';
+import HistoryPage from './pages/HistoryPage.jsx';
+import TemplatesPage from './pages/TemplatesPage.jsx';
 
 /* ─────────────────────────────────────────────
    Module-level constants & pure helpers
@@ -22,26 +25,30 @@ const PALETTES = [
 ];
 
 function parseApiResult(text, lang) {
-  const cvBulletsIdx = text.search(/^CV\s+BULLETS?\s*$/im);
-  const coverIdx = text.search(/^COVER\s+LETTER\s*$/im);
-  let bulletsText = "", coverText = "";
-  if (cvBulletsIdx >= 0) {
-    const bulletStart = text.indexOf('\n', cvBulletsIdx) + 1;
-    const bulletEnd = coverIdx >= 0 ? coverIdx : text.length;
-    bulletsText = text.slice(bulletStart, bulletEnd).trim();
+  const cvIdx   = text.search(/^(?:[\d.]+\s*)?(TAILORED\s+CV|CV\s+ADAPTADO|CV\s+BULLETS?)\s*$/im);
+  const coverIdx = text.search(/^(?:[\d.]+\s*)?(COVER\s+LETTER|CARTA\s+DE\s+PRESENTACI[ÓO]N)\s*$/im);
+  let tailoredCV = "", coverText = "";
+  if (cvIdx >= 0) {
+    const cvStart = text.indexOf('\n', cvIdx) + 1;
+    const cvEnd = coverIdx >= 0 ? coverIdx : text.length;
+    tailoredCV = text.slice(cvStart, cvEnd).trim();
   } else {
-    bulletsText = coverIdx >= 0 ? text.slice(0, coverIdx).trim() : text;
+    tailoredCV = coverIdx >= 0 ? text.slice(0, coverIdx).trim() : text;
   }
   if (coverIdx >= 0) {
     const coverStart = text.indexOf('\n', coverIdx) + 1;
     coverText = text.slice(coverStart).trim();
   }
-  const bullets = bulletsText.split('\n').map(l => l.trim()).filter(l => l.length > 10)
+  const bullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => /^[•\-\*]/.test(l) && l.length > 10)
+    .map(l => ({ tag: "REWRITTEN", text: l.replace(/^[•\-\*]\s+/, "").trim(), original: "", match: [] }))
+    .filter(b => b.text.length > 5);
+  const fallbackBullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => l.length > 10)
     .map(l => ({ tag: "REWRITTEN", text: l.replace(/^[•\-\*\d]+\.?\s+/, "").trim(), original: "", match: [] }))
     .filter(b => b.text.length > 5);
   return {
-    bullets: bullets.length > 0 ? bullets : [{ tag: "REWRITTEN", text: bulletsText || text, original: "", match: [] }],
+    bullets: bullets.length > 0 ? bullets : fallbackBullets.length > 0 ? fallbackBullets : [{ tag: "REWRITTEN", text: tailoredCV || text, original: "", match: [] }],
     cover: coverText,
+    tailoredCV,
     fit: 88,
     keywords: [],
     lang,
@@ -56,6 +63,18 @@ function extractJobTitle(jd) {
 function extractCompanyName(jd) {
   const match = (jd || "").match(/[—\-–|·]\s*([^,\n\(]+)/);
   return match ? match[1].trim().slice(0, 30) : "Company";
+}
+
+export function relativeTime(isoString) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 2)   return "just now";
+  if (mins < 60)  return `${mins} min ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
 }
 
 /* ─────────────────────────────────────────────
@@ -116,14 +135,35 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
 
         {/* Nav links */}
         <nav className="hidden md:flex items-center gap-1 ml-4">
-          {["Tailor", "History", "Templates", "Docs"].map(link => (
-            <button
-              key={link}
-              className="rounded-md px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--muted)] hover:text-[var(--fg)] transition-colors"
+          {[
+            { label: "Tailor",    to: "/" },
+            { label: "History",   to: "/history" },
+            { label: "Templates", to: "/templates" },
+          ].map(({ label, to }) => (
+            <NavLink
+              key={label}
+              to={to}
+              end={to === "/"}
+              className={({ isActive }) =>
+                cn(
+                  "rounded-md px-3 py-1.5 text-xs transition-colors",
+                  isActive
+                    ? "bg-[var(--muted)] text-[var(--fg)] font-medium"
+                    : "text-[var(--muted-fg)] hover:bg-[var(--muted)] hover:text-[var(--fg)]"
+                )
+              }
             >
-              {link}
-            </button>
+              {label}
+            </NavLink>
           ))}
+          <a
+            href="https://github.com/emiliopg/cv-tailor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--muted)] hover:text-[var(--fg)] transition-colors"
+          >
+            Docs
+          </a>
         </nav>
 
         <div className="flex-1" />
@@ -154,7 +194,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
 
           {/* GitHub Star */}
           <a
-            href="https://github.com"
+            href="https://github.com/emiliopg/cv-tailor"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--bg)] hover:text-[var(--fg)] transition-colors"
@@ -178,7 +218,6 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
 ───────────────────────────────────────────── */
 
 function StepDot({ n, label, state }) {
-  // state: "done" | "active" | "idle"
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div
@@ -553,10 +592,7 @@ function CoverView({ t, result, copy, copied, dl }) {
 ───────────────────────────────────────────── */
 
 function RawView({ t, result, copy, copied, dl }) {
-  const raw = [
-    result.bullets.map(b => `• ${b.text}`).join('\n'),
-    result.cover ? `\n\nCOVER LETTER\n${result.cover}` : "",
-  ].join('');
+  const raw = result.tailoredCV || result.bullets.map(b => `• ${b.text}`).join('\n');
 
   return (
     <div className="flex flex-col gap-4 anim-fade">
@@ -811,38 +847,13 @@ function TweaksPanel({ open, onClose, tweaks, setTweak, onToggle }) {
 }
 
 /* ─────────────────────────────────────────────
-   App (default export)
+   TailorPage
 ───────────────────────────────────────────── */
 
-export default function App() {
-  /* ── Theme / tweaks state ── */
-  const [theme, setTheme] = useState("light");
-  const [palette, setPalette] = useState("graphite");
-  const [layout, setLayout] = useState("split");
-  const [density, setDensity] = useState("comfortable");
-  const [fontStack, setFontStack] = useState("geist");
-  const [showHistory, setShowHistory] = useState(true);
-  const [tweaksOpen, setTweaksOpen] = useState(false);
-
-  const tweaks = { theme, palette, layout, density, fontStack, showHistory };
-  const setTweak = (key, val) => {
-    if (key === 'theme') setTheme(val);
-    else if (key === 'palette') setPalette(val);
-    else if (key === 'layout') setLayout(val);
-    else if (key === 'density') setDensity(val);
-    else if (key === 'fontStack') setFontStack(val);
-    else if (key === 'showHistory') setShowHistory(val);
-  };
-
-  /* ── Theme effect ── */
-  useEffect(() => {
-    document.documentElement.dataset.theme = tweaks.theme;
-    document.documentElement.dataset.palette = tweaks.palette;
-    document.documentElement.dataset.font = tweaks.fontStack;
-  }, [tweaks.theme, tweaks.palette, tweaks.fontStack]);
+function TailorPage({ t, lang, tweaks }) {
+  const location = useLocation();
 
   /* ── Core state ── */
-  const [lang, setLang] = useState("en");
   const [cv, setCv] = useState("");
   const [jd, setJd] = useState("");
   const [status, setStatus] = useState("idle");
@@ -853,13 +864,27 @@ export default function App() {
   const [error, setError] = useState(null);
   const [uploadErr, setUploadErr] = useState(null);
   const [uploadingTo, setUploadingTo] = useState(null);
-  const [history, setHistory] = useState([
-    { id: 1, role: "Senior Product Designer",  company: "Linear",        lang: "en", fit: 92, when: "2 days ago" },
-    { id: 2, role: "Diseñador de Producto",     company: "Mercado Libre", lang: "es", fit: 84, when: "5 days ago" },
-    { id: 3, role: "Frontend Engineer",         company: "Vercel",        lang: "en", fit: 88, when: "1 week ago" },
-  ]);
+  const [recentHistory, setRecentHistory] = useState([]);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
-  const t = STRINGS[lang];
+  /* ── Load template or history entry from router state ── */
+  useEffect(() => {
+    if (location.state?.templateText) setCv(location.state.templateText);
+    if (location.state?.jdText)       setJd(location.state.jdText);
+    if (location.state?.templateText || location.state?.jdText) {
+      window.history.replaceState({}, document.title);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Fetch recent history for sidebar widget ── */
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_URL}/api/history`)
+      .then(r => setRecentHistory(
+        r.data.slice(0, 5).map(e => ({ ...e, when: relativeTime(e.createdAt) }))
+      ))
+      .catch(() => {});
+  }, [historyRefreshKey]);
+
   const canSubmit = cv.trim().length > 30 && jd.trim().length > 30 && status !== "streaming";
 
   /* ── Handlers ── */
@@ -916,10 +941,19 @@ export default function App() {
       const parsed = parseApiResult(data.result, lang);
       setResult(parsed);
       setStatus("done");
-      setHistory(h => [{
-        id: Date.now(), role: extractJobTitle(jd), company: extractCompanyName(jd),
-        lang, fit: parsed.fit, when: "just now",
-      }, ...h].slice(0, 5));
+
+      /* Save to history (fire-and-forget) */
+      axios.post(`${import.meta.env.VITE_API_URL}/api/history`, {
+        role:       extractJobTitle(jd),
+        company:    extractCompanyName(jd),
+        lang,
+        fit:        parsed.fit,
+        cv,
+        jd,
+        tailoredCV: parsed.tailoredCV,
+        cover:      parsed.cover,
+      }).then(() => setHistoryRefreshKey(k => k + 1)).catch(() => {});
+
     } catch (err) {
       cancelAnimationFrame(animFrame);
       setError(err.response?.data?.error || err.message || "Failed to tailor CV.");
@@ -950,140 +984,183 @@ export default function App() {
 
   /* ── Render ── */
   return (
+    <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
+      <Hero
+        t={t}
+        status={status}
+        progress={streamProgress}
+        hasResult={!!result}
+        fit={result?.fit}
+      />
+
+      {/* Two-column inputs */}
+      <div className={cn(
+        "mt-6 grid gap-5",
+        tweaks.layout === "split" ? "lg:grid-cols-2" : "grid-cols-1 max-w-3xl mx-auto"
+      )}>
+        <div className="anim-rise">
+          <InputCard
+            t={t}
+            icon={<IconFile size={15} />}
+            label={t.cvLabel}
+            hint={t.cvHint}
+            ph={t.cvPh}
+            value={cv}
+            onChange={setCv}
+            rows={tweaks.density === "compact" ? 12 : 16}
+            actions={
+              <>
+                <UploadBtn target="cv" />
+                <Button variant="ghost" size="xs" onClick={handleLoadSample}>
+                  <IconWand size={12} /> {t.loadSample}
+                </Button>
+              </>
+            }
+          />
+        </div>
+        <div className="anim-rise-1">
+          <InputCard
+            t={t}
+            icon={<IconBriefcase size={15} />}
+            label={t.jdLabel}
+            hint={t.jdHint}
+            ph={t.jdPh}
+            value={jd}
+            onChange={setJd}
+            rows={tweaks.density === "compact" ? 12 : 16}
+            actions={<UploadBtn target="jd" />}
+          />
+        </div>
+      </div>
+
+      {/* Upload error */}
+      {uploadErr && (
+        <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+          {t.uploadErr} <span className="opacity-70">— {uploadErr}</span>
+        </div>
+      )}
+
+      {/* Action bar */}
+      <Card className="mt-5 overflow-hidden anim-rise-2">
+        <div className="flex flex-wrap items-center gap-3 p-4">
+          <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {t.poweredBy}
+            </span>
+            <span className="hidden sm:inline-block text-[var(--border)]">·</span>
+            <span className="tabular-nums hidden sm:inline">
+              CV {cv.length} · JD {jd.length} {t.chars}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleClear}
+            disabled={status === "streaming"}
+          >
+            {t.clear}
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            className="min-w-[200px]"
+            disabled={!canSubmit}
+            onClick={runTailor}
+          >
+            {status === "streaming"
+              ? <><Spinner />{t.submitting}</>
+              : <><IconSparkle size={15} />{t.submit}</>
+            }
+          </Button>
+        </div>
+      </Card>
+
+      {/* Results */}
+      {(status !== "idle" || result) && (
+        <div
+          className="mt-5 anim-result"
+          key={status + (result?.bullets?.length ?? 0)}
+        >
+          <OutputCard
+            t={t}
+            lang={lang}
+            status={status}
+            progress={streamProgress}
+            result={result}
+            tab={tab}
+            setTab={setTab}
+            copy={copy}
+            copied={copied}
+            dl={dl}
+            regenerate={runTailor}
+            compact={tweaks.density === "compact"}
+          />
+        </div>
+      )}
+
+      {/* Error display */}
+      {error && status === "idle" && (
+        <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* History sidebar */}
+      {tweaks.showHistory && status === "idle" && !result && (
+        <div className="mt-5 anim-rise-3">
+          <HistoryCard t={t} history={recentHistory} />
+        </div>
+      )}
+    </main>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   App (default export)
+───────────────────────────────────────────── */
+
+export default function App() {
+  /* ── Theme / tweaks state ── */
+  const [theme, setTheme] = useState("light");
+  const [palette, setPalette] = useState("graphite");
+  const [layout, setLayout] = useState("split");
+  const [density, setDensity] = useState("comfortable");
+  const [fontStack, setFontStack] = useState("geist");
+  const [showHistory, setShowHistory] = useState(true);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  const tweaks = { theme, palette, layout, density, fontStack, showHistory };
+  const setTweak = (key, val) => {
+    if (key === 'theme') setTheme(val);
+    else if (key === 'palette') setPalette(val);
+    else if (key === 'layout') setLayout(val);
+    else if (key === 'density') setDensity(val);
+    else if (key === 'fontStack') setFontStack(val);
+    else if (key === 'showHistory') setShowHistory(val);
+  };
+
+  /* ── Theme effect ── */
+  useEffect(() => {
+    document.documentElement.dataset.theme = tweaks.theme;
+    document.documentElement.dataset.palette = tweaks.palette;
+    document.documentElement.dataset.font = tweaks.fontStack;
+  }, [tweaks.theme, tweaks.palette, tweaks.fontStack]);
+
+  const [lang, setLang] = useState("en");
+  const t = STRINGS[lang];
+
+  return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--fg)]">
       <div className="bg-texture" aria-hidden="true" />
 
       <TopBar t={t} lang={lang} setLang={setLang} tweaks={tweaks} setTweak={setTweak} />
 
-      <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
-        <Hero
-          t={t}
-          status={status}
-          progress={streamProgress}
-          hasResult={!!result}
-          fit={result?.fit}
-        />
-
-        {/* Two-column inputs */}
-        <div className={cn(
-          "mt-6 grid gap-5",
-          tweaks.layout === "split" ? "lg:grid-cols-2" : "grid-cols-1 max-w-3xl mx-auto"
-        )}>
-          <div className="anim-rise">
-            <InputCard
-              t={t}
-              icon={<IconFile size={15} />}
-              label={t.cvLabel}
-              hint={t.cvHint}
-              ph={t.cvPh}
-              value={cv}
-              onChange={setCv}
-              rows={tweaks.density === "compact" ? 12 : 16}
-              actions={
-                <>
-                  <UploadBtn target="cv" />
-                  <Button variant="ghost" size="xs" onClick={handleLoadSample}>
-                    <IconWand size={12} /> {t.loadSample}
-                  </Button>
-                </>
-              }
-            />
-          </div>
-          <div className="anim-rise-1">
-            <InputCard
-              t={t}
-              icon={<IconBriefcase size={15} />}
-              label={t.jdLabel}
-              hint={t.jdHint}
-              ph={t.jdPh}
-              value={jd}
-              onChange={setJd}
-              rows={tweaks.density === "compact" ? 12 : 16}
-              actions={<UploadBtn target="jd" />}
-            />
-          </div>
-        </div>
-
-        {/* Upload error */}
-        {uploadErr && (
-          <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-600">
-            {t.uploadErr} <span className="opacity-70">— {uploadErr}</span>
-          </div>
-        )}
-
-        {/* Action bar */}
-        <Card className="mt-5 overflow-hidden anim-rise-2">
-          <div className="flex flex-wrap items-center gap-3 p-4">
-            <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {t.poweredBy}
-              </span>
-              <span className="hidden sm:inline-block text-[var(--border)]">·</span>
-              <span className="tabular-nums hidden sm:inline">
-                CV {cv.length} · JD {jd.length} {t.chars}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleClear}
-              disabled={status === "streaming"}
-            >
-              {t.clear}
-            </Button>
-            <Button
-              variant="primary"
-              size="lg"
-              className="min-w-[200px]"
-              disabled={!canSubmit}
-              onClick={runTailor}
-            >
-              {status === "streaming"
-                ? <><Spinner />{t.submitting}</>
-                : <><IconSparkle size={15} />{t.submit}</>
-              }
-            </Button>
-          </div>
-        </Card>
-
-        {/* Results */}
-        {(status !== "idle" || result) && (
-          <div
-            className="mt-5 anim-result"
-            key={status + (result?.bullets?.length ?? 0)}
-          >
-            <OutputCard
-              t={t}
-              lang={lang}
-              status={status}
-              progress={streamProgress}
-              result={result}
-              tab={tab}
-              setTab={setTab}
-              copy={copy}
-              copied={copied}
-              dl={dl}
-              regenerate={runTailor}
-              compact={tweaks.density === "compact"}
-            />
-          </div>
-        )}
-
-        {/* Error display */}
-        {error && status === "idle" && (
-          <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-600">
-            {error}
-          </div>
-        )}
-
-        {/* History */}
-        {tweaks.showHistory && status === "idle" && !result && (
-          <div className="mt-5 anim-rise-3">
-            <HistoryCard t={t} history={history} />
-          </div>
-        )}
-      </main>
+      <Routes>
+        <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
+        <Route path="/history"   element={<HistoryPage t={t} lang={lang} />} />
+        <Route path="/templates" element={<TemplatesPage t={t} lang={lang} />} />
+      </Routes>
 
       <TweaksPanel
         open={tweaksOpen}
