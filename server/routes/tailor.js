@@ -13,20 +13,38 @@ const buildPrompt = (cv, jobDescription, language) => {
     return {
       system: `Eres un experto en recursos humanos y redacción de CVs profesionales.
 Tu tarea es adaptar el CV del usuario a la descripción de trabajo proporcionada.
-Devuelve dos secciones claramente separadas:
-1. PUNTOS CV: Los bullet points del CV reescritos para alinearse con el puesto.
-2. CARTA DE PRESENTACIÓN: Una carta de presentación profesional y personalizada.
-Sé concreto, usa verbos de acción y resalta logros medibles cuando sea posible.`,
+Reglas:
+- Conserva EXACTAMENTE los mismos títulos de sección que aparecen en el CV original.
+- Mantén el mismo símbolo de viñeta que usa el usuario (•, -, *).
+- Solo actualiza el contenido — no añadas ni elimines secciones.
+- Usa verbos de acción y cuantifica logros cuando sea posible.
+
+Devuelve EXACTAMENTE dos secciones con estos encabezados en su propia línea (sin número, sin puntuación extra):
+
+CV ADAPTADO
+[CV completo reescrito aquí]
+
+CARTA DE PRESENTACIÓN
+[carta de presentación aquí]`,
       user: `CV ACTUAL:\n${cv}\n\nDESCRIPCIÓN DEL TRABAJO:\n${jobDescription}`
     };
   }
   return {
     system: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
-Return two clearly separated sections:
-1. CV BULLETS: Rewritten CV bullet points aligned with the role.
-2. COVER LETTER: A professional, personalized cover letter.
-Be specific, use action verbs, and highlight measurable achievements where possible.`,
+Rules:
+- Preserve ALL section headings exactly as they appear in the original CV.
+- Keep the same bullet symbol the user uses (•, -, *).
+- Only update the wording — do not add or remove sections.
+- Use strong action verbs and quantify achievements where possible.
+
+Return EXACTLY two sections with these headers on their own line (no number, no extra punctuation):
+
+TAILORED CV
+[full rewritten CV here]
+
+COVER LETTER
+[cover letter here]`,
     user: `CURRENT CV:\n${cv}\n\nJOB DESCRIPTION:\n${jobDescription}`
   };
 };
@@ -48,7 +66,7 @@ router.post('/', async (req, res) => {
         { role: 'user', content: user }
       ],
       temperature: 0.6,
-      max_tokens: 1024,
+      max_tokens: 2048,
     });
 
     const result = response.choices[0].message.content;
