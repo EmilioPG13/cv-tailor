@@ -1,5 +1,6 @@
 import express from 'express';
 import OpenAI from 'openai';
+import { requireAuth } from '@clerk/express';
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ COVER LETTER
   };
 };
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth(), async (req, res) => {
   const { cv, jobDescription, language = 'en' } = req.body;
 
   if (!cv || !jobDescription) {

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { clerkMiddleware } from '@clerk/express';
 import tailorRoute from './routes/tailor.js';
 import historyRoute from './routes/history.js';
 
@@ -10,6 +11,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173'
 }));
 app.use(express.json({ limit: '2mb' }));
+app.use(clerkMiddleware());
 app.use('/api/tailor', tailorRoute);
 app.use('/api/history', historyRoute);
 
