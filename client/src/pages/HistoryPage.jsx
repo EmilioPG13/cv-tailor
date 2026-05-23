@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 import {
   cn, Button, Card, CardHeader, CardTitle, CardContent,
@@ -20,22 +21,32 @@ function relativeTime(isoString) {
 
 export default function HistoryPage({ t, lang }) {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [entries, setEntries]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/history`)
-      .then(r => setEntries(r.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    (async () => {
+      try {
+        const token = await getToken();
+        const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setEntries(data);
+      } catch {}
+      setLoading(false);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleDelete(id) {
     setDeleting(id);
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/history/${id}`);
+      const token = await getToken();
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/history/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setEntries(prev => prev.filter(e => e.id !== id));
       if (expanded === id) setExpanded(null);
     } catch {}

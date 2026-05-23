@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '@clerk/express';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -23,13 +24,13 @@ async function writeHistory(entries) {
 }
 
 // GET /api/history — all entries, newest first
-router.get('/', async (req, res) => {
+router.get('/', requireAuth(), async (req, res) => {
   const entries = await readHistory();
   res.json(entries);
 });
 
 // POST /api/history — prepend new entry, keep last 50
-router.post('/', async (req, res) => {
+router.post('/', requireAuth(), async (req, res) => {
   const { role, company, lang, fit, cv, jd, tailoredCV, cover } = req.body;
   if (!role || !tailoredCV) {
     return res.status(400).json({ error: 'role and tailoredCV are required.' });
@@ -53,7 +54,7 @@ router.post('/', async (req, res) => {
 });
 
 // DELETE /api/history/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth(), async (req, res) => {
   const entries = await readHistory();
   const filtered = entries.filter(e => e.id !== req.params.id);
   if (filtered.length === entries.length) {

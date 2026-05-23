@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { useUser, useAuth, SignInButton, UserButton } from '@clerk/clerk-react';
 import axios from 'axios';
 import { STRINGS } from './data/strings.js';
 import { SAMPLE } from './data/sample.js';
@@ -13,6 +14,7 @@ import {
 } from './components/ui.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import TemplatesPage from './pages/TemplatesPage.jsx';
+import AuthGuard from './components/AuthGuard.jsx';
 
 /* ─────────────────────────────────────────────
    Module-level constants & pure helpers
@@ -120,6 +122,7 @@ function LanguageSegment({ lang, setLang }) {
 ───────────────────────────────────────────── */
 
 function TopBar({ t, lang, setLang, tweaks, setTweak }) {
+  const { isSignedIn } = useUser();
   return (
     <header className="glass sticky top-0 z-40 border-b border-[var(--card-border)]">
       <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-6 py-3">
@@ -203,10 +206,14 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             Star
           </a>
 
-          {/* Sign in */}
-          <Button variant="outline" size="sm">
-            Sign in
-          </Button>
+          {/* Sign in / User */}
+          {isSignedIn ? (
+            <UserButton />
+          ) : (
+            <SignInButton mode="modal">
+              <Button variant="outline" size="sm">Sign in</Button>
+            </SignInButton>
+          )}
         </div>
       </div>
     </header>
@@ -852,6 +859,8 @@ function TweaksPanel({ open, onClose, tweaks, setTweak, onToggle }) {
 
 function TailorPage({ t, lang, tweaks }) {
   const location = useLocation();
+  const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
 
   /* ── Core state ── */
   const [cv, setCv] = useState("");
@@ -878,14 +887,19 @@ function TailorPage({ t, lang, tweaks }) {
 
   /* ── Fetch recent history for sidebar widget ── */
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/history`)
-      .then(r => setRecentHistory(
-        r.data.slice(0, 5).map(e => ({ ...e, when: relativeTime(e.createdAt) }))
-      ))
-      .catch(() => {});
-  }, [historyRefreshKey]);
+    if (!isSignedIn) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRecentHistory(data.slice(0, 5).map(e => ({ ...e, when: relativeTime(e.createdAt) })));
+      } catch {}
+    })();
+  }, [historyRefreshKey, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const canSubmit = cv.trim().length > 30 && jd.trim().length > 30 && status !== "streaming";
+  const canSubmit = isSignedIn && cv.trim().length > 30 && jd.trim().length > 30 && status !== "streaming";
 
   /* ── Handlers ── */
   const handleLoadSample = () => { setCv(SAMPLE[lang].cv); setJd(SAMPLE[lang].jd); };
@@ -932,9 +946,12 @@ function TailorPage({ t, lang, tweaks }) {
     };
     animFrame = requestAnimationFrame(tick);
     try {
+      const token = await getToken();
+      const headers = { Authorization: `Bearer ${token}` };
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/tailor`,
-        { cv, jobDescription: jd, language: lang }
+        { cv, jobDescription: jd, language: lang },
+        { headers }
       );
       cancelAnimationFrame(animFrame);
       setStreamProgress(1);
@@ -952,7 +969,7 @@ function TailorPage({ t, lang, tweaks }) {
         jd,
         tailoredCV: parsed.tailoredCV,
         cover:      parsed.cover,
-      }).then(() => setHistoryRefreshKey(k => k + 1)).catch(() => {});
+      }, { headers }).then(() => setHistoryRefreshKey(k => k + 1)).catch(() => {});
 
     } catch (err) {
       cancelAnimationFrame(animFrame);
@@ -960,7 +977,7 @@ function TailorPage({ t, lang, tweaks }) {
       setStatus("idle");
       setStreamProgress(0);
     }
-  }, [cv, jd, lang]);
+  }, [cv, jd, lang, getToken]);
 
   /* ── UploadBtn (closes over uploadingTo, handleUpload, t) ── */
   function UploadBtn({ target }) {
@@ -1061,18 +1078,26 @@ function TailorPage({ t, lang, tweaks }) {
           >
             {t.clear}
           </Button>
-          <Button
-            variant="primary"
-            size="lg"
-            className="min-w-[200px]"
-            disabled={!canSubmit}
-            onClick={runTailor}
-          >
-            {status === "streaming"
-              ? <><Spinner />{t.submitting}</>
-              : <><IconSparkle size={15} />{t.submit}</>
-            }
-          </Button>
+          {!isSignedIn ? (
+            <SignInButton mode="modal">
+              <Button variant="primary" size="lg" className="min-w-50">
+                <IconBolt size={15} /> Sign in to tailor
+              </Button>
+            </SignInButton>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              className="min-w-50"
+              disabled={!canSubmit}
+              onClick={runTailor}
+            >
+              {status === "streaming"
+                ? <><Spinner />{t.submitting}</>
+                : <><IconSparkle size={15} />{t.submit}</>
+              }
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -1158,8 +1183,8 @@ export default function App() {
 
       <Routes>
         <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
-        <Route path="/history"   element={<HistoryPage t={t} lang={lang} />} />
-        <Route path="/templates" element={<TemplatesPage t={t} lang={lang} />} />
+        <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
+        <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
       </Routes>
 
       <TweaksPanel
