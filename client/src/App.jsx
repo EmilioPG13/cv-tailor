@@ -14,6 +14,7 @@ import {
 } from './components/ui.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import TemplatesPage from './pages/TemplatesPage.jsx';
+import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import AuthGuard from './components/AuthGuard.jsx';
 
 /* ─────────────────────────────────────────────
@@ -142,6 +143,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             { label: "Tailor",    to: "/" },
             { label: "History",   to: "/history" },
             { label: "Templates", to: "/templates" },
+            { label: "Analytics", to: "/analytics" },
           ].map(({ label, to }) => (
             <NavLink
               key={label}
@@ -875,6 +877,11 @@ function TailorPage({ t, lang, tweaks }) {
   const [uploadingTo, setUploadingTo] = useState(null);
   const [recentHistory, setRecentHistory] = useState([]);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [jdMode, setJdMode] = useState('text'); // 'text' | 'url'
+  const [scrapeUrl, setScrapeUrl] = useState('');
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState(null);
+  const [tone, setTone] = useState('professional');
 
   /* ── Load template or history entry from router state ── */
   useEffect(() => {
@@ -929,6 +936,26 @@ function TailorPage({ t, lang, tweaks }) {
     URL.revokeObjectURL(url);
   };
 
+  /* ── Scrape handler ── */
+  const handleScrape = async () => {
+    if (!scrapeUrl.trim()) return;
+    setScraping(true);
+    setScrapeError(null);
+    try {
+      const token = await getToken();
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/scrape`,
+        { url: scrapeUrl },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setJd(data.content);
+      setJdMode('text');
+    } catch (err) {
+      setScrapeError(err.response?.data?.error || 'Failed to scrape URL.');
+    }
+    setScraping(false);
+  };
+
   /* ── API call ── */
   const runTailor = useCallback(async () => {
     setStatus("streaming");
@@ -950,7 +977,7 @@ function TailorPage({ t, lang, tweaks }) {
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/tailor`,
-        { cv, jobDescription: jd, language: lang },
+        { cv, jobDescription: jd, language: lang, tone },
         { headers }
       );
       cancelAnimationFrame(animFrame);
@@ -977,7 +1004,7 @@ function TailorPage({ t, lang, tweaks }) {
       setStatus("idle");
       setStreamProgress(0);
     }
-  }, [cv, jd, lang, getToken]);
+  }, [cv, jd, lang, tone, getToken]);
 
   /* ── UploadBtn (closes over uploadingTo, handleUpload, t) ── */
   function UploadBtn({ target }) {
@@ -1036,17 +1063,56 @@ function TailorPage({ t, lang, tweaks }) {
           />
         </div>
         <div className="anim-rise-1">
-          <InputCard
-            t={t}
-            icon={<IconBriefcase size={15} />}
-            label={t.jdLabel}
-            hint={t.jdHint}
-            ph={t.jdPh}
-            value={jd}
-            onChange={setJd}
-            rows={tweaks.density === "compact" ? 12 : 16}
-            actions={<UploadBtn target="jd" />}
-          />
+          {jdMode === 'text' ? (
+            <InputCard
+              t={t}
+              icon={<IconBriefcase size={15} />}
+              label={t.jdLabel}
+              hint={t.jdHint}
+              ph={t.jdPh}
+              value={jd}
+              onChange={setJd}
+              rows={tweaks.density === "compact" ? 12 : 16}
+              actions={
+                <>
+                  <UploadBtn target="jd" />
+                  <Button variant="ghost" size="xs" onClick={() => setJdMode('url')}>
+                    <IconGlobe size={12} /> URL
+                  </Button>
+                </>
+              }
+            />
+          ) : (
+            <Card className="flex flex-col h-full">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--accent)]"><IconBriefcase size={15} /></span>
+                    <CardTitle>{t.jdLabel}</CardTitle>
+                  </div>
+                  <Button variant="ghost" size="xs" onClick={() => setJdMode('text')}>
+                    <IconFile size={12} /> Text
+                  </Button>
+                </div>
+                <CardDescription>Paste a job posting URL to scrape it automatically.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 pt-0">
+                <input
+                  type="url"
+                  placeholder="https://company.com/jobs/software-engineer"
+                  value={scrapeUrl}
+                  onChange={e => setScrapeUrl(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-sm text-[var(--fg)] placeholder:text-[var(--muted-fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                />
+                {scrapeError && (
+                  <p className="text-xs text-red-500">{scrapeError}</p>
+                )}
+                <Button variant="primary" size="sm" disabled={scraping || !scrapeUrl.trim()} onClick={handleScrape}>
+                  {scraping ? <><Spinner /> Scraping…</> : <><IconGlobe size={12} /> Scrape Job Page</>}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -1059,6 +1125,28 @@ function TailorPage({ t, lang, tweaks }) {
 
       {/* Action bar */}
       <Card className="mt-5 overflow-hidden anim-rise-2">
+        {/* Tone picker */}
+        <div className="flex items-center gap-2 px-4 pt-3 pb-0 border-b border-[var(--border)]">
+          <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
+          {[
+            { id: 'professional',   label: 'Professional' },
+            { id: 'conversational', label: 'Conversational' },
+            { id: 'enthusiastic',   label: 'Enthusiastic' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setTone(id)}
+              className={cn(
+                "rounded-full px-3 py-1 text-[11px] font-medium transition-colors mb-3",
+                tone === id
+                  ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                  : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
             <span className="flex items-center gap-1.5">
@@ -1185,6 +1273,7 @@ export default function App() {
         <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
         <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
         <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
+        <Route path="/analytics" element={<AuthGuard><AnalyticsPage /></AuthGuard>} />
       </Routes>
 
       <TweaksPanel
