@@ -9,8 +9,22 @@ const client = new OpenAI({
   baseURL: 'https://integrate.api.nvidia.com/v1'
 });
 
-const buildPrompt = (cv, jobDescription, language) => {
+const TONE_INSTRUCTIONS = {
+  en: {
+    professional:   'Write in a formal, professional tone.',
+    conversational: 'Write in a warm, conversational tone that feels personable.',
+    enthusiastic:   'Write in an enthusiastic, energetic tone that conveys passion.',
+  },
+  es: {
+    professional:   'Escribe en un tono formal y profesional.',
+    conversational: 'Escribe en un tono cálido y conversacional.',
+    enthusiastic:   'Escribe en un tono entusiasta y enérgico.',
+  },
+};
+
+const buildPrompt = (cv, jobDescription, language, tone = 'professional') => {
   if (language === 'es') {
+    const toneInstruction = TONE_INSTRUCTIONS.es[tone] ?? TONE_INSTRUCTIONS.es.professional;
     return {
       system: `Eres un experto en recursos humanos y redacción de CVs profesionales.
 Tu tarea es adaptar el CV del usuario a la descripción de trabajo proporcionada.
@@ -19,6 +33,7 @@ Reglas:
 - Mantén el mismo símbolo de viñeta que usa el usuario (•, -, *).
 - Solo actualiza el contenido — no añadas ni elimines secciones.
 - Usa verbos de acción y cuantifica logros cuando sea posible.
+- ${toneInstruction}
 
 Devuelve EXACTAMENTE dos secciones con estos encabezados en su propia línea (sin número, sin puntuación extra):
 
@@ -30,6 +45,8 @@ CARTA DE PRESENTACIÓN
       user: `CV ACTUAL:\n${cv}\n\nDESCRIPCIÓN DEL TRABAJO:\n${jobDescription}`
     };
   }
+
+  const toneInstruction = TONE_INSTRUCTIONS.en[tone] ?? TONE_INSTRUCTIONS.en.professional;
   return {
     system: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
@@ -38,6 +55,7 @@ Rules:
 - Keep the same bullet symbol the user uses (•, -, *).
 - Only update the wording — do not add or remove sections.
 - Use strong action verbs and quantify achievements where possible.
+- ${toneInstruction}
 
 Return EXACTLY two sections with these headers on their own line (no number, no extra punctuation):
 
@@ -51,13 +69,13 @@ COVER LETTER
 };
 
 router.post('/', requireAuth(), async (req, res) => {
-  const { cv, jobDescription, language = 'en' } = req.body;
+  const { cv, jobDescription, language = 'en', tone = 'professional' } = req.body;
 
   if (!cv || !jobDescription) {
     return res.status(400).json({ error: 'CV and job description are required.' });
   }
 
-  const { system, user } = buildPrompt(cv, jobDescription, language);
+  const { system, user } = buildPrompt(cv, jobDescription, language, tone);
 
   try {
     const response = await client.chat.completions.create({

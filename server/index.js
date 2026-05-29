@@ -4,6 +4,8 @@ import cors from 'cors';
 import { clerkMiddleware } from '@clerk/express';
 import tailorRoute from './routes/tailor.js';
 import historyRoute from './routes/history.js';
+import scrapeRoute from './routes/scrape.js';
+import analyticsRoute from './routes/analytics.js';
 
 const app = express();
 
@@ -14,6 +16,8 @@ app.use(express.json({ limit: '2mb' }));
 app.use(clerkMiddleware());
 app.use('/api/tailor', tailorRoute);
 app.use('/api/history', historyRoute);
+app.use('/api/scrape', scrapeRoute);
+app.use('/api/analytics', analyticsRoute);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
