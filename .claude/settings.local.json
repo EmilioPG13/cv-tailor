@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /tmp/cvtailor_design/cv-taylor/chats/chat1.md | tail -100)",
+      "Read(//tmp/cvtailor_design/cv-taylor/chats/**)",
+      "Read(//tmp/cvtailor_design/cv-taylor/project/**)",
+      "Bash(ls /mnt/c/Users/Emili/Desktop/Code/cv-tailor/client/src/)",
+      "Read(//mnt/c/Users/Emili/Desktop/Code/cv-tailor/client/**)",
+      "Bash(npm run *)",
+      "Bash(chmod +x \"c:/Users/Emili/Desktop/Code/cv-tailor/start.sh\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Emili\\\\Desktop\\\\Code\\\\cv-tailor\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(git add *)",
+      "WebFetch(domain:cv-tailor-8fo7.onrender.com)",
+      "WebFetch(domain:cv-tailor-gold-zeta.vercel.app)",
+      "Bash(clerk auth *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_organizations",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "Bash(npm install *)"
+    ]
+  }
+}
