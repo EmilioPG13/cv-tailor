@@ -20,7 +20,18 @@
       "mcp__claude_ai_Supabase__list_organizations",
       "mcp__claude_ai_Supabase__apply_migration",
       "mcp__claude_ai_Supabase__get_publishable_keys",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(clerk users *)",
+      "Bash(clerk doctor *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(u['id'], u.get\\('email_addresses',[{}]\\)[0].get\\('email_address',''\\)\\) for u in d.get\\('data',[]\\)]\")",
+      "Bash(clerk api *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('public_metadata:', d.get\\('public_metadata'\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(u['id'], u.get\\('email_addresses',[{}]\\)[0].get\\('email_address',''\\)\\) for u in \\(d if isinstance\\(d,list\\) else d.get\\('data',[]\\)\\)]\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('C:/tmp/users.json'\\)\\); u=d['data'][0]; print\\('id:', u['id']\\); print\\('meta:', u.get\\('public_metadata'\\)\\)\")",
+      "PowerShell(clerk users list --json --limit 10 2>&1 | Out-File -FilePath \"$env:TEMP\\\\users.json\" -Encoding utf8; python3 -c \"import json; d=json.load\\(open\\(r'$env:TEMP\\\\users.json'\\)\\); u=d['data'][0]; print\\('id:', u['id']\\); print\\('meta:', u.get\\('public_metadata'\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -X PATCH https://api.clerk.com/v1/users/user_3E6d3Pd8M7J65C0X4jEQnk0hul8 -H 'Authorization: Bearer sk_test_ZDUBwyNxTfj6QxtRDKevBGGHKaEnEs5LloYtnXDEMJ' -H 'Content-Type: application/json' -d '{\"public_metadata\":{\"role\":\"admin\"}}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('public_metadata:', d.get\\('public_metadata','ERROR'\\)\\)\")"
     ]
   }
 }
