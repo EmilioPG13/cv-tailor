@@ -4,8 +4,12 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 
 const router = express.Router();
 
-// Initialise once at module level — one instance for the lifetime of the process.
-const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+// Lazy singleton — only instantiated on first request so a missing key doesn't crash startup.
+let firecrawl;
+function getFirecrawl() {
+  if (!firecrawl) firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+  return firecrawl;
+}
 
 // POST /api/scrape
 // Body: { url: string }
@@ -30,7 +34,7 @@ router.post('/', requireAuth(), async (req, res) => {
   }
 
   try {
-    const result = await firecrawl.scrapeUrl(parsedUrl.href, { formats: ['markdown'] });
+    const result = await getFirecrawl().scrapeUrl(parsedUrl.href, { formats: ['markdown'] });
 
     if (!result || !result.markdown) {
       return res.status(502).json({ error: 'Firecrawl returned no content for that URL.' });
