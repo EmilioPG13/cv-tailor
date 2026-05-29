@@ -1,66 +1,66 @@
 import express from 'express';
 import { requireAuth } from '@clerk/express';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR  = join(__dirname, '../data');
-const DATA_FILE = join(DATA_DIR, 'history.json');
 
-async function readHistory() {
-  try {
-    const raw = await readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-async function writeHistory(entries) {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(DATA_FILE, JSON.stringify(entries, null, 2), 'utf-8');
-}
-
-// GET /api/history — all entries, newest first
+// GET /api/history — user's entries, newest first
 router.get('/', requireAuth(), async (req, res) => {
-  const entries = await readHistory();
-  res.json(entries);
+  const { data, error } = await supabase
+    .from('history')
+    .select('*')
+    .eq('user_id', req.auth.userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
-// POST /api/history — prepend new entry, keep last 50
+// POST /api/history — save a new entry
 router.post('/', requireAuth(), async (req, res) => {
   const { role, company, lang, fit, cv, jd, tailoredCV, cover } = req.body;
   if (!role || !tailoredCV) {
     return res.status(400).json({ error: 'role and tailoredCV are required.' });
   }
-  const entries = await readHistory();
-  const newEntry = {
-    id: Date.now().toString(),
-    role,
-    company: company || '',
-    lang: lang || 'en',
-    fit: fit ?? null,
-    cv:        cv        || '',
-    jd:        jd        || '',
-    tailoredCV,
-    cover:     cover     || '',
-    createdAt: new Date().toISOString(),
-  };
-  const updated = [newEntry, ...entries].slice(0, 50);
-  await writeHistory(updated);
-  res.status(201).json(newEntry);
+
+  const { data, error } = await supabase
+    .from('history')
+    .insert({
+      user_id:     req.auth.userId,
+      role,
+      company:     company     || '',
+      lang:        lang        || 'en',
+      fit:         fit ?? null,
+      cv:          cv          || '',
+      jd:          jd          || '',
+      tailored_cv: tailoredCV,
+      cover:       cover       || '',
+    })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // normalise column name back to camelCase for the client
+  res.status(201).json({ ...data, tailoredCV: data.tailored_cv });
 });
 
-// DELETE /api/history/:id
+// DELETE /api/history/:id — only the owner can delete
 router.delete('/:id', requireAuth(), async (req, res) => {
-  const entries = await readHistory();
-  const filtered = entries.filter(e => e.id !== req.params.id);
-  if (filtered.length === entries.length) {
-    return res.status(404).json({ error: 'Entry not found.' });
-  }
-  await writeHistory(filtered);
+  const { error, count } = await supabase
+    .from('history')
+    .delete({ count: 'exact' })
+    .eq('id', req.params.id)
+    .eq('user_id', req.auth.userId);
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (count === 0) return res.status(404).json({ error: 'Entry not found.' });
   res.json({ ok: true });
 });
 
