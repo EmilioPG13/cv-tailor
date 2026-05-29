@@ -15,6 +15,7 @@ import {
 import HistoryPage from './pages/HistoryPage.jsx';
 import TemplatesPage from './pages/TemplatesPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 import AuthGuard from './components/AuthGuard.jsx';
 
 /* ─────────────────────────────────────────────
@@ -144,6 +145,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             { label: "History",   to: "/history" },
             { label: "Templates", to: "/templates" },
             { label: "Analytics", to: "/analytics" },
+            { label: "Admin",     to: "/admin" },
           ].map(({ label, to }) => (
             <NavLink
               key={label}
@@ -1274,6 +1276,7 @@ export default function App() {
         <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
         <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
         <Route path="/analytics" element={<AuthGuard><AnalyticsPage /></AuthGuard>} />
+        <Route path="/admin"     element={<AuthGuard><AdminPage /></AuthGuard>} />
       </Routes>
 
       <TweaksPanel
