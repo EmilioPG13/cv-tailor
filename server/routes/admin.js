@@ -4,10 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let _supabase = null;
+function getSupabase() {
+  if (!_supabase) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+    }
+    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+  return _supabase;
+}
 
 async function requireAdmin(req, res, next) {
   try {
@@ -30,9 +36,9 @@ router.get('/stats', requireAuth(), requireAdmin, async (req, res) => {
     { count: totalUsers, error: e2 },
     { count: totalTemplates, error: e3 },
   ] = await Promise.all([
-    supabase.from('history').select('*', { count: 'exact', head: true }),
-    supabase.from('history').select('user_id', { count: 'exact', head: true }),
-    supabase.from('templates').select('*', { count: 'exact', head: true }),
+    getSupabase().from('history').select('*', { count: 'exact', head: true }),
+    getSupabase().from('history').select('user_id', { count: 'exact', head: true }),
+    getSupabase().from('templates').select('*', { count: 'exact', head: true }),
   ]);
 
   if (e1 || e2 || e3) return res.status(500).json({ error: 'Failed to fetch stats' });
