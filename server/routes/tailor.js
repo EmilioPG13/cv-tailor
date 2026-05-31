@@ -68,8 +68,72 @@ COVER LETTER
   };
 };
 
+const buildStylePrompt = (originalCV, tailoredCV, language) => {
+  if (language === 'es') {
+    return {
+      system: `Eres un experto en diseño de CVs y desarrollo front-end.
+Tu tarea es convertir un CV en texto plano en un documento HTML completo y autocontenido con CSS embebido.
+
+REGLAS ESTRICTAS:
+1. Genera ÚNICAMENTE el documento HTML. Comienza con <!DOCTYPE html> y termina con </html>. Sin markdown, sin bloques de código, sin texto extra.
+2. Analiza el TEXTO DEL CV ORIGINAL para inferir el diseño:
+   - ¿Es de una o dos columnas?
+   - Estilo de encabezados de sección (mayúsculas, subrayado, borde inferior, etc.)
+   - Símbolo de viñeta usado (•, -, *, ninguno) — replícalo.
+   - ¿La información de contacto está centrada, alineada a la izquierda o en columnas?
+3. Usa ÚNICAMENTE el contenido del TEXTO DEL CV ADAPTADO — no el original.
+4. Requisitos de diseño:
+   - Tamaño A4 (210mm × 297mm). @page { size: A4; margin: 18mm 16mm; }
+   - @media print { body { margin: 0; } }
+   - Fuente base: 10.5pt. 'Georgia','Times New Roman',serif para cuerpo; 'Arial','Helvetica',sans-serif para encabezados (o todo sans-serif si el original parece moderno).
+   - Encabezados de sección: negrita, ligeramente más grandes, con borde inferior o barra de acento.
+   - Sin activos externos. 100% autocontenido.
+   - Texto negro sobre fondo blanco. Un color de acento opcional (#1a3a5c o #333) solo para bordes/reglas.
+   - El nombre debe ser prominente (fuente grande, negrita).
+5. HTML5 válido con etiquetas semánticas (header, section, h1, h2, ul, etc.).`,
+      user: `TEXTO DEL CV ORIGINAL (solo para inferir diseño — NO uses este contenido):\n${originalCV}\n\nTEXTO DEL CV ADAPTADO (usa este contenido):\n${tailoredCV}`
+    };
+  }
+  return {
+    system: `You are an expert CV designer and front-end developer.
+Your task is to convert a plain-text CV into a single, self-contained HTML document with embedded CSS.
+
+STRICT RULES:
+1. Output ONLY the HTML document. Start with <!DOCTYPE html> and end with </html>. No markdown, no code fences, no explanation text before or after.
+2. Study the ORIGINAL CV TEXT to infer the intended layout:
+   - Single-column vs two-column sidebar layout.
+   - Section heading style (all-caps, title case, underlined, with rule, etc.)
+   - Bullet symbol used (•, -, *, none) — replicate it.
+   - Whether contact info is centered, left-aligned, or split across columns.
+3. Use ONLY the content from TAILORED CV TEXT — not the original.
+4. Design requirements:
+   - A4 paper size. @page { size: A4; margin: 18mm 16mm; }
+   - @media print { body { margin: 0; } }
+   - Base font size: 10.5pt. 'Georgia','Times New Roman',serif for body; 'Arial','Helvetica',sans-serif for headings — or all sans-serif if original reads as a modern document.
+   - Section headings: visually distinct (bold, slightly larger, with bottom border or left accent bar matching the original's style).
+   - No external assets (no CDN fonts, no images, no external CSS). 100% self-contained.
+   - Black text on white background. One optional accent color (#1a3a5c or #333) for heading rules only.
+   - The name/header at the top should be prominent (large, bold).
+5. Clean, valid HTML5 with semantic tags (header, section, h1, h2, ul, etc.).`,
+    user: `ORIGINAL CV TEXT (for layout inference only — do NOT use this content):\n${originalCV}\n\nTAILORED CV TEXT (use this content):\n${tailoredCV}`
+  };
+};
+
+router.get('/models', async (req, res) => {
+  try {
+    const list = await client.models.list();
+    const models = list.data
+      .filter(m => !m.id.includes('embed') && !m.id.includes('rerank'))
+      .map(m => ({ id: m.id }));
+    res.json({ models });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Could not fetch model list.' });
+  }
+});
+
 router.post('/', requireAuth(), async (req, res) => {
-  const { cv, jobDescription, language = 'en', tone = 'professional' } = req.body;
+  const { cv, jobDescription, language = 'en', tone = 'professional', model = 'meta/llama-3.3-70b-instruct' } = req.body;
 
   if (!cv || !jobDescription) {
     return res.status(400).json({ error: 'CV and job description are required.' });
@@ -79,7 +143,7 @@ router.post('/', requireAuth(), async (req, res) => {
 
   try {
     const response = await client.chat.completions.create({
-      model: 'meta/llama-3.3-70b-instruct',
+      model,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user }
@@ -93,6 +157,43 @@ router.post('/', requireAuth(), async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Something went wrong with the AI call.' });
+  }
+});
+
+router.post('/style', requireAuth(), async (req, res) => {
+  const { cv: originalCV, tailoredCV, language = 'en', model = 'meta/llama-3.3-70b-instruct' } = req.body;
+
+  if (!originalCV || !tailoredCV) {
+    return res.status(400).json({ error: 'originalCV and tailoredCV are required.' });
+  }
+
+  const { system, user } = buildStylePrompt(originalCV, tailoredCV, language);
+
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      temperature: 0.3,
+      max_tokens: 4000,
+    });
+
+    let html = response.choices[0].message.content.trim();
+    // Strip markdown code fences the model may emit despite instructions
+    html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
+    // Ensure output starts with a DOCTYPE
+    if (!html.toLowerCase().startsWith('<!doctype')) {
+      const idx = html.toLowerCase().indexOf('<!doctype');
+      if (idx > -1) html = html.slice(idx);
+      else return res.status(422).json({ error: 'AI did not return a valid HTML document.' });
+    }
+
+    res.json({ html });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Something went wrong generating the styled CV.' });
   }
 });
 

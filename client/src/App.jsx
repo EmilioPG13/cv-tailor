@@ -626,16 +626,72 @@ function RawView({ t, result, copy, copied, dl }) {
 }
 
 /* ─────────────────────────────────────────────
+   DesignView
+───────────────────────────────────────────── */
+
+function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
+  const iframeRef = useRef(null);
+
+  if (styleStatus === 'loading') {
+    return (
+      <div className="flex flex-col gap-3 py-4 anim-fade">
+        <p className="text-xs text-[var(--muted-fg)]">{t.styleGenerating}…</p>
+        {[100, 90, 85, 95, 80, 70, 88].map((w, i) => (
+          <div key={i} className="h-3.5 rounded-md anim-shimmer"
+            style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (styleStatus === 'error') {
+    return (
+      <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-600 anim-fade">
+        {styleError || t.styleError}
+      </div>
+    );
+  }
+
+  if (!styledCV) return null;
+
+  return (
+    <div className="flex flex-col gap-3 anim-fade">
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="ghost" size="xs"
+          onClick={() => dl('tailored-cv.html', styledCV, 'text/html')}>
+          <IconDownload size={12} /> {t.downloadHtml}
+        </Button>
+        <Button variant="ghost" size="xs"
+          onClick={() => iframeRef.current?.contentWindow?.print()}>
+          <IconFile size={12} /> {t.printPdf}
+        </Button>
+      </div>
+      <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-white" style={{ height: '700px' }}>
+        <iframe
+          ref={iframeRef}
+          srcDoc={styledCV}
+          sandbox="allow-same-origin allow-modals"
+          title="Styled CV Preview"
+          className="w-full h-full"
+          style={{ border: 'none' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    OutputCard
 ───────────────────────────────────────────── */
 
-function OutputCard({ t, lang, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact }) {
+function OutputCard({ t, lang, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact, styledCV, styleStatus, styleError }) {
   const hasResult = !!result;
 
   const tabItems = [
     { value: "bullets", label: t.bullets, count: hasResult ? result.bullets.length : null },
     { value: "cover",   label: t.cover },
     { value: "raw",     label: t.raw },
+    { value: "design",  label: t.design },
   ];
 
   return (
@@ -677,6 +733,9 @@ function OutputCard({ t, lang, status, progress, result, tab, setTab, copy, copi
         )}
         {hasResult && tab === "raw" && (
           <RawView t={t} result={result} copy={copy} copied={copied} dl={dl} />
+        )}
+        {tab === "design" && (
+          <DesignView t={t} styledCV={styledCV} styleStatus={styleStatus} styleError={styleError} dl={dl} />
         )}
       </CardContent>
     </Card>
@@ -884,6 +943,12 @@ function TailorPage({ t, lang, tweaks }) {
   const [scraping, setScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState(null);
   const [tone, setTone] = useState('professional');
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('meta/llama-3.3-70b-instruct');
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [styledCV, setStyledCV] = useState(null);
+  const [styleStatus, setStyleStatus] = useState('idle');
+  const [styleError, setStyleError] = useState(null);
 
   /* ── Load template or history entry from router state ── */
   useEffect(() => {
@@ -908,11 +973,20 @@ function TailorPage({ t, lang, tweaks }) {
     })();
   }, [historyRefreshKey, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* ── Fetch available NVIDIA NIM models on mount ── */
+  useEffect(() => {
+    setModelsLoading(true);
+    axios.get(`${import.meta.env.VITE_API_URL}/api/tailor/models`)
+      .then(({ data }) => { if (data.models?.length) setModels(data.models); })
+      .catch(() => {})
+      .finally(() => setModelsLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const canSubmit = isSignedIn && cv.trim().length > 30 && jd.trim().length > 30 && status !== "streaming";
 
   /* ── Handlers ── */
   const handleLoadSample = () => { setCv(SAMPLE[lang].cv); setJd(SAMPLE[lang].jd); };
-  const handleClear = () => { setCv(""); setJd(""); setResult(null); setStatus("idle"); setError(null); };
+  const handleClear = () => { setCv(""); setJd(""); setResult(null); setStatus("idle"); setError(null); setStyledCV(null); setStyleStatus('idle'); setStyleError(null); };
 
   const handleUpload = (target, file) => {
     if (!file) return;
@@ -930,8 +1004,8 @@ function TailorPage({ t, lang, tweaks }) {
     setTimeout(() => setCopied(null), 1200);
   };
 
-  const dl = (filename, text) => {
-    const blob = new Blob([text], { type: "text/plain" });
+  const dl = (filename, text, mime = "text/plain") => {
+    const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = filename; a.click();
@@ -965,6 +1039,9 @@ function TailorPage({ t, lang, tweaks }) {
     setStreamProgress(0);
     setTab("bullets");
     setError(null);
+    setStyledCV(null);
+    setStyleStatus('idle');
+    setStyleError(null);
     const startTime = performance.now();
     const estimatedDuration = 12000;
     let animFrame;
@@ -979,7 +1056,7 @@ function TailorPage({ t, lang, tweaks }) {
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/tailor`,
-        { cv, jobDescription: jd, language: lang, tone },
+        { cv, jobDescription: jd, language: lang, tone, model: selectedModel },
         { headers }
       );
       cancelAnimationFrame(animFrame);
@@ -987,6 +1064,22 @@ function TailorPage({ t, lang, tweaks }) {
       const parsed = parseApiResult(data.result, lang);
       setResult(parsed);
       setStatus("done");
+
+      /* Generate styled HTML CV (fire-and-forget) */
+      setStyleStatus('loading');
+      getToken().then(token =>
+        axios.post(
+          `${import.meta.env.VITE_API_URL}/api/tailor/style`,
+          { cv, tailoredCV: parsed.tailoredCV, language: lang, model: selectedModel },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      ).then(({ data }) => {
+        setStyledCV(data.html);
+        setStyleStatus('done');
+      }).catch(err => {
+        setStyleError(err.response?.data?.error || t.styleError);
+        setStyleStatus('error');
+      });
 
       /* Save to history (fire-and-forget) */
       axios.post(`${import.meta.env.VITE_API_URL}/api/history`, {
@@ -1006,7 +1099,7 @@ function TailorPage({ t, lang, tweaks }) {
       setStatus("idle");
       setStreamProgress(0);
     }
-  }, [cv, jd, lang, tone, getToken]);
+  }, [cv, jd, lang, tone, selectedModel, t, getToken]);
 
   /* ── UploadBtn (closes over uploadingTo, handleUpload, t) ── */
   function UploadBtn({ target }) {
@@ -1127,27 +1220,46 @@ function TailorPage({ t, lang, tweaks }) {
 
       {/* Action bar */}
       <Card className="mt-5 overflow-hidden anim-rise-2">
-        {/* Tone picker */}
-        <div className="flex items-center gap-2 px-4 pt-3 pb-0 border-b border-[var(--border)]">
-          <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
-          {[
-            { id: 'professional',   label: 'Professional' },
-            { id: 'conversational', label: 'Conversational' },
-            { id: 'enthusiastic',   label: 'Enthusiastic' },
-          ].map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setTone(id)}
-              className={cn(
-                "rounded-full px-3 py-1 text-[11px] font-medium transition-colors mb-3",
-                tone === id
-                  ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-                  : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
-              )}
+        {/* Tone + Model picker */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
+            {[
+              { id: 'professional',   label: 'Professional' },
+              { id: 'conversational', label: 'Conversational' },
+              { id: 'enthusiastic',   label: 'Enthusiastic' },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setTone(id)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                  tone === id
+                    ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                    : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-[11px] text-[var(--muted-fg)]">{t.modelLabel}:</span>
+            <select
+              value={selectedModel}
+              onChange={e => setSelectedModel(e.target.value)}
+              disabled={modelsLoading}
+              className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-2 py-1 text-[11px] text-[var(--fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50"
             >
-              {label}
-            </button>
-          ))}
+              {modelsLoading ? (
+                <option>{t.modelLoading}</option>
+              ) : models.length > 0 ? (
+                models.map(m => <option key={m.id} value={m.id}>{m.id}</option>)
+              ) : (
+                <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
+              )}
+            </select>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
@@ -1210,6 +1322,9 @@ function TailorPage({ t, lang, tweaks }) {
             dl={dl}
             regenerate={runTailor}
             compact={tweaks.density === "compact"}
+            styledCV={styledCV}
+            styleStatus={styleStatus}
+            styleError={styleError}
           />
         </div>
       )}
