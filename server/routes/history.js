@@ -4,14 +4,20 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let _supabase = null;
+function getSupabase() {
+  if (!_supabase) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+    }
+    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+  return _supabase;
+}
 
 // GET /api/history — user's entries, newest first
 router.get('/', requireAuth(), async (req, res) => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('history')
     .select('*')
     .eq('user_id', getAuth(req).userId)
@@ -29,7 +35,7 @@ router.post('/', requireAuth(), async (req, res) => {
     return res.status(400).json({ error: 'role and tailoredCV are required.' });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('history')
     .insert({
       user_id:     getAuth(req).userId,
@@ -53,7 +59,7 @@ router.post('/', requireAuth(), async (req, res) => {
 
 // DELETE /api/history/:id — only the owner can delete
 router.delete('/:id', requireAuth(), async (req, res) => {
-  const { error, count } = await supabase
+  const { error, count } = await getSupabase()
     .from('history')
     .delete({ count: 'exact' })
     .eq('id', req.params.id)

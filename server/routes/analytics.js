@@ -4,10 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let _supabase = null;
+function getSupabase() {
+  if (!_supabase) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
+    }
+    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+  return _supabase;
+}
 
 // GET /api/analytics/me
 // Returns usage statistics for the authenticated user:
@@ -16,7 +22,7 @@ router.get('/me', requireAuth(), async (req, res) => {
   const userId = getAuth(req).userId;
 
   // --- Query 1: total row count for this user ---
-  const { count, error: countError } = await supabase
+  const { count, error: countError } = await getSupabase()
     .from('history')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
@@ -28,7 +34,7 @@ router.get('/me', requireAuth(), async (req, res) => {
   // --- Query 2: role + created_at for the last 30 days ---
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data, error: dataError } = await supabase
+  const { data, error: dataError } = await getSupabase()
     .from('history')
     .select('role, created_at')
     .eq('user_id', userId)
