@@ -124,7 +124,9 @@ function LanguageSegment({ lang, setLang }) {
 ───────────────────────────────────────────── */
 
 function TopBar({ t, lang, setLang, tweaks, setTweak }) {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === 'admin';
+
   return (
     <header className="glass sticky top-0 z-40 border-b border-[var(--card-border)]">
       <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-6 py-3">
@@ -145,7 +147,6 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             { label: "History",   to: "/history" },
             { label: "Templates", to: "/templates" },
             { label: "Analytics", to: "/analytics" },
-            { label: "Admin",     to: "/admin" },
           ].map(({ label, to }) => (
             <NavLink
               key={label}
@@ -199,20 +200,19 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             )}
           </button>
 
-          {/* GitHub Star */}
-          <a
-            href="https://github.com/EmilioPG13/cv-tailor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--muted)] px-3 py-1.5 text-xs text-[var(--muted-fg)] hover:bg-[var(--bg)] hover:text-[var(--fg)] transition-colors"
-          >
-            <IconGithub size={12} />
-            Star
-          </a>
-
           {/* Sign in / User */}
           {isSignedIn ? (
-            <UserButton />
+            <UserButton>
+              {isAdmin && (
+                <UserButton.MenuItems>
+                  <UserButton.Link
+                    label="Admin"
+                    labelIcon={<IconSettings size={14} />}
+                    href="/admin"
+                  />
+                </UserButton.MenuItems>
+              )}
+            </UserButton>
           ) : (
             <SignInButton mode="modal">
               <Button variant="outline" size="sm">Sign in</Button>
