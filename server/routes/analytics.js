@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '@clerk/express';
+import { requireAuth, getAuth } from '@clerk/express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
@@ -13,7 +13,7 @@ const supabase = createClient(
 // Returns usage statistics for the authenticated user:
 //   { total, perDay, topRoles }
 router.get('/me', requireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
+  const userId = getAuth(req).userId;
 
   // --- Query 1: total row count for this user ---
   const { count, error: countError } = await supabase
