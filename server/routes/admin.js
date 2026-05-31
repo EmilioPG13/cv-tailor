@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth, clerkClient } from '@clerk/express';
+import { requireAuth, getAuth, clerkClient } from '@clerk/express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
@@ -11,12 +11,14 @@ const supabase = createClient(
 
 async function requireAdmin(req, res, next) {
   try {
-    const user = await clerkClient.users.getUser(req.auth.userId);
+    const { userId } = getAuth(req);
+    const user = await clerkClient.users.getUser(userId);
     if (user.publicMetadata?.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' });
     }
     next();
-  } catch {
+  } catch (err) {
+    console.error('[requireAdmin] error:', err.message);
     res.status(403).json({ error: 'Forbidden' });
   }
 }

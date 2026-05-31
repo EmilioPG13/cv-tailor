@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '@clerk/express';
+import { requireAuth, getAuth } from '@clerk/express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
@@ -14,7 +14,7 @@ router.get('/', requireAuth(), async (req, res) => {
   const { data, error } = await supabase
     .from('history')
     .select('*')
-    .eq('user_id', req.auth.userId)
+    .eq('user_id', getAuth(req).userId)
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -32,7 +32,7 @@ router.post('/', requireAuth(), async (req, res) => {
   const { data, error } = await supabase
     .from('history')
     .insert({
-      user_id:     req.auth.userId,
+      user_id:     getAuth(req).userId,
       role,
       company:     company     || '',
       lang:        lang        || 'en',
@@ -57,7 +57,7 @@ router.delete('/:id', requireAuth(), async (req, res) => {
     .from('history')
     .delete({ count: 'exact' })
     .eq('id', req.params.id)
-    .eq('user_id', req.auth.userId);
+    .eq('user_id', getAuth(req).userId);
 
   if (error) return res.status(500).json({ error: error.message });
   if (count === 0) return res.status(404).json({ error: 'Entry not found.' });
