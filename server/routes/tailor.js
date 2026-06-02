@@ -122,8 +122,10 @@ STRICT RULES:
 router.get('/models', async (req, res) => {
   try {
     const list = await client.models.list();
+    const seen = new Set();
     const models = list.data
       .filter(m => !m.id.includes('embed') && !m.id.includes('rerank'))
+      .filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
       .map(m => ({ id: m.id }));
     res.json({ models });
   } catch (error) {

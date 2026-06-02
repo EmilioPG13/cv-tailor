@@ -922,6 +922,14 @@ function TweaksPanel({ open, onClose, tweaks, setTweak, onToggle }) {
    TailorPage
 ───────────────────────────────────────────── */
 
+function friendlyModelName(id) {
+  let name = id.includes('/') ? id.split('/')[1] : id;
+  name = name.replace(/-(instruct|chat|it|hf)(-v[\d.]+)?$/i, '');
+  name = name.replace(/-v[\d.]+$/i, '');
+  name = name.replace(/(\d+x?\d*)b\b/gi, m => m.toUpperCase());
+  return name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 function TailorPage({ t, lang, tweaks }) {
   const location = useLocation();
   const { isSignedIn } = useUser();
@@ -1256,7 +1264,7 @@ function TailorPage({ t, lang, tweaks }) {
               {modelsLoading ? (
                 <option>{t.modelLoading}</option>
               ) : models.length > 0 ? (
-                models.map(m => <option key={m.id} value={m.id}>{m.id}</option>)
+                models.map(m => <option key={m.id} value={m.id}>{friendlyModelName(m.id)}</option>)
               ) : (
                 <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
               )}
