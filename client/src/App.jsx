@@ -106,10 +106,10 @@ function LanguageSegment({ lang, setLang }) {
           key={l}
           onClick={() => setLang(l)}
           className={cn(
-            "rounded-full px-3 py-1 transition-all",
+            "rounded-full px-3 py-1 transition-all duration-200 ease-in-out",
             lang === l
-              ? "bg-[var(--bg)] text-[var(--fg)] shadow-sm"
-              : "text-[var(--muted-fg)] hover:text-[var(--fg)]"
+              ? "bg-[var(--bg)] text-[var(--fg)] shadow-sm scale-105"
+              : "text-[var(--muted-fg)] hover:text-[var(--fg)] hover:scale-105"
           )}
         >
           {l.toUpperCase()}
@@ -128,7 +128,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
   const isAdmin = user?.publicMetadata?.role === 'admin';
 
   return (
-    <header className="glass sticky top-0 z-40 border-b border-[var(--card-border)]">
+    <header className="sticky top-0 z-40 bg-(--bg) shadow-[0_2px_8px_0_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-6 py-3">
         {/* Logo */}
         <div className="flex items-center gap-2.5 shrink-0">
@@ -183,26 +183,28 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
           {/* Dark/light toggle */}
           <button
             onClick={() => setTweak("theme", tweaks.theme === "light" ? "dark" : "light")}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--muted)] text-[var(--muted-fg)] hover:bg-[var(--bg)] hover:text-[var(--fg)] transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--muted)] text-[var(--muted-fg)] hover:bg-[var(--bg)] hover:text-[var(--fg)] hover:scale-110 transition-all duration-200 ease-in-out"
             aria-label="Toggle theme"
           >
-            {tweaks.theme === "light" ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-              </svg>
-            )}
+            <span key={tweaks.theme} className="animate-icon-pop flex items-center justify-center">
+              {tweaks.theme === "light" ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              )}
+            </span>
           </button>
 
           {/* Sign in / User */}
           {isSignedIn ? (
-            <UserButton>
+            <UserButton appearance={{ elements: { avatarBox: { width: '34px', height: '34px' } } }}>
               {isAdmin && (
                 <UserButton.MenuItems>
                   <UserButton.Link
