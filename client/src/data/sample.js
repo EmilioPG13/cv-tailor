@@ -1,7 +1,7 @@
 export const SAMPLE = {
   en: {
-    cv: `EMILIO PARRA GONZÁLEZ
-Software Engineer · Mexico City · emilio@example.com
+    cv: `ALEX MORGAN
+Software Engineer · San Francisco, CA · alex.morgan@example.com
 
 EXPERIENCE
 Frontend Developer — Nimbus Labs (2022–Present)
@@ -10,12 +10,12 @@ Frontend Developer — Nimbus Labs (2022–Present)
 • Helped reduce page load times by refactoring legacy code.
 • Mentored two junior engineers and ran weekly code reviews.
 
-Junior Developer — Estudio Pixel (2020–2022)
-• Made landing pages and small web apps for local clients in WordPress.
-• Wrote some Node.js scripts to automate deployment tasks.
+Junior Developer — Pixel Studio (2020–2022)
+• Built landing pages and small web apps for local clients using WordPress.
+• Wrote Node.js scripts to automate deployment tasks.
 
 EDUCATION
-B.S. Computer Science — UNAM (2016–2020)
+B.S. Computer Science — State University (2016–2020)
 
 SKILLS
 JavaScript, React, Node.js, TypeScript, Tailwind CSS, Git, Figma`,
@@ -37,22 +37,22 @@ Requirements:
 • Bilingual EN/ES preferred (team is distributed across LATAM and EU).`,
   },
   es: {
-    cv: `EMILIO PARRA GONZÁLEZ
-Ingeniero de Software · Ciudad de México · emilio@example.com
+    cv: `ALEX MORGAN
+Ingeniero/a de Software · San Francisco, CA · alex.morgan@example.com
 
 EXPERIENCIA
-Desarrollador Frontend — Nimbus Labs (2022–Presente)
+Desarrollador/a Frontend — Nimbus Labs (2022–Presente)
 • Construí y mantuve el dashboard de React de la empresa usado por 4k usuarios.
 • Trabajé en el design system y la librería de componentes con el equipo de diseño.
 • Ayudé a reducir tiempos de carga refactorizando código legado.
 • Mentoreé a dos ingenieros junior y dirigí code reviews semanales.
 
-Desarrollador Junior — Estudio Pixel (2020–2022)
-• Hice landing pages y pequeñas web apps para clientes locales en WordPress.
-• Escribí algunos scripts en Node.js para automatizar despliegues.
+Desarrollador/a Junior — Pixel Studio (2020–2022)
+• Desarrollé landing pages y pequeñas web apps para clientes locales en WordPress.
+• Escribí scripts en Node.js para automatizar despliegues.
 
 EDUCACIÓN
-Lic. en Ciencias de la Computación — UNAM (2016–2020)
+Lic. en Ciencias de la Computación — Universidad Estatal (2016–2020)
 
 HABILIDADES
 JavaScript, React, Node.js, TypeScript, Tailwind CSS, Git, Figma`,
