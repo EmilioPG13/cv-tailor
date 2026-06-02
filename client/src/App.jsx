@@ -638,6 +638,7 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
     return (
       <div className="flex flex-col gap-3 py-4 anim-fade">
         <p className="text-xs text-[var(--muted-fg)]">{t.styleGenerating}…</p>
+        <p className="text-[10px] text-[var(--muted-fg)] opacity-60">This usually takes 30–60 seconds.</p>
         {[100, 90, 85, 95, 80, 70, 88].map((w, i) => (
           <div key={i} className="h-3.5 rounded-md anim-shimmer"
             style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
@@ -959,6 +960,8 @@ function TailorPage({ t, lang, tweaks }) {
   const [styledCV, setStyledCV] = useState(null);
   const [styleStatus, setStyleStatus] = useState('idle');
   const [styleError, setStyleError] = useState(null);
+  const [cvStyle, setCvStyle] = useState('modern');
+  const [cvPreviewImage, setCvPreviewImage] = useState(null);
 
   /* ── Load template or history entry from router state ── */
   useEffect(() => {
@@ -996,14 +999,17 @@ function TailorPage({ t, lang, tweaks }) {
 
   /* ── Handlers ── */
   const handleLoadSample = () => { setCv(SAMPLE[lang].cv); setJd(SAMPLE[lang].jd); };
-  const handleClear = () => { setCv(""); setJd(""); setResult(null); setStatus("idle"); setError(null); setStyledCV(null); setStyleStatus('idle'); setStyleError(null); };
+  const handleClear = () => { setCv(""); setJd(""); setResult(null); setStatus("idle"); setError(null); setStyledCV(null); setStyleStatus('idle'); setStyleError(null); setCvPreviewImage(null); };
 
   const handleUpload = (target, file) => {
     if (!file) return;
     setUploadErr(null);
     setUploadingTo(target);
     extractText(file)
-      .then(text => { (target === "cv" ? setCv : setJd)(text); })
+      .then(({ text, previewImage }) => {
+        (target === "cv" ? setCv : setJd)(text);
+        if (target === "cv") setCvPreviewImage(previewImage);
+      })
       .catch(err => { setUploadErr(err?.message || String(err)); })
       .finally(() => setUploadingTo(null));
   };
@@ -1080,7 +1086,7 @@ function TailorPage({ t, lang, tweaks }) {
       getToken().then(token =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { cv, tailoredCV: parsed.tailoredCV, language: lang, model: selectedModel },
+          { tailoredCV: parsed.tailoredCV, language: lang, model: selectedModel, cvStyle, cvPreviewImage },
           { headers: { Authorization: `Bearer ${token}` } }
         )
       ).then(({ data }) => {
@@ -1109,7 +1115,15 @@ function TailorPage({ t, lang, tweaks }) {
       setStatus("idle");
       setStreamProgress(0);
     }
-  }, [cv, jd, lang, tone, selectedModel, t, getToken]);
+  }, [cv, jd, lang, tone, selectedModel, cvStyle, cvPreviewImage, t, getToken]);
+
+  /* ── StylePicker (closes over cvStyle, setCvStyle, cvPreviewImage) ── */
+  const STYLE_OPTIONS = [
+    { id: 'classic',  label: 'Classic',  desc: 'Clean & ATS-safe' },
+    { id: 'modern',   label: 'Modern',   desc: 'Polished accent color' },
+    { id: 'creative', label: 'Creative', desc: 'Bold sidebar design' },
+    { id: 'minimal',  label: 'Minimal',  desc: 'Executive whitespace' },
+  ];
 
   /* ── UploadBtn (closes over uploadingTo, handleUpload, t) ── */
   function UploadBtn({ target }) {
@@ -1230,6 +1244,31 @@ function TailorPage({ t, lang, tweaks }) {
 
       {/* Action bar */}
       <Card className="mt-5 overflow-hidden anim-rise-2">
+        {/* Style picker */}
+        <div className="px-4 pt-3 pb-3 border-b border-[var(--border)]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-[var(--muted-fg)] mr-1">Style:</span>
+            {cvPreviewImage ? (
+              <span className="text-[11px] text-[var(--muted-fg)] italic">Using your uploaded CV design</span>
+            ) : (
+              STYLE_OPTIONS.map(({ id, label, desc }) => (
+                <button
+                  key={id}
+                  onClick={() => setCvStyle(id)}
+                  title={desc}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                    cvStyle === id
+                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                  )}
+                >
+                  {label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
         {/* Tone + Model picker */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
