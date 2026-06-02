@@ -1,6 +1,11 @@
 import express from 'express';
 import OpenAI from 'openai';
 import { requireAuth } from '@clerk/express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router = express.Router();
 
@@ -68,54 +73,61 @@ COVER LETTER
   };
 };
 
-const buildStylePrompt = (originalCV, tailoredCV, language) => {
-  if (language === 'es') {
-    return {
-      system: `Eres un experto en diseño de CVs y desarrollo front-end.
-Tu tarea es convertir un CV en texto plano en un documento HTML completo y autocontenido con CSS embebido.
+const buildTemplateStylePrompt = (template, tailoredCV, language) => {
+  const isEs = language === 'es';
+  return {
+    system: isEs
+      ? `Eres un experto en edición de CVs en HTML.
+Se te proporciona una plantilla HTML con CSS embebido y el texto de un CV adaptado.
+TU ÚNICA TAREA es rellenar la plantilla con el contenido del CV.
 
 REGLAS ESTRICTAS:
-1. Genera ÚNICAMENTE el documento HTML. Comienza con <!DOCTYPE html> y termina con </html>. Sin markdown, sin bloques de código, sin texto extra.
-2. Analiza el TEXTO DEL CV ORIGINAL para inferir el diseño:
-   - ¿Es de una o dos columnas?
-   - Estilo de encabezados de sección (mayúsculas, subrayado, borde inferior, etc.)
-   - Símbolo de viñeta usado (•, -, *, ninguno) — replícalo.
-   - ¿La información de contacto está centrada, alineada a la izquierda o en columnas?
-3. Usa ÚNICAMENTE el contenido del TEXTO DEL CV ADAPTADO — no el original.
-4. Requisitos de diseño:
-   - Tamaño A4 (210mm × 297mm). @page { size: A4; margin: 18mm 16mm; }
-   - @media print { body { margin: 0; } }
-   - Fuente base: 10.5pt. 'Georgia','Times New Roman',serif para cuerpo; 'Arial','Helvetica',sans-serif para encabezados (o todo sans-serif si el original parece moderno).
-   - Encabezados de sección: negrita, ligeramente más grandes, con borde inferior o barra de acento.
-   - Sin activos externos. 100% autocontenido.
-   - Texto negro sobre fondo blanco. Un color de acento opcional (#1a3a5c o #333) solo para bordes/reglas.
-   - El nombre debe ser prominente (fuente grande, negrita).
-5. HTML5 válido con etiquetas semánticas (header, section, h1, h2, ul, etc.).`,
-      user: `TEXTO DEL CV ORIGINAL (solo para inferir diseño — NO uses este contenido):\n${originalCV}\n\nTEXTO DEL CV ADAPTADO (usa este contenido):\n${tailoredCV}`
-    };
-  }
-  return {
-    system: `You are an expert CV designer and front-end developer.
-Your task is to convert a plain-text CV into a single, self-contained HTML document with embedded CSS.
+1. NO modifiques ningún CSS, nombres de clase, IDs ni estructura HTML.
+2. Solo reemplaza el texto de los elementos (nombres, títulos, empresas, fechas, viñetas, etc.) con el contenido del TEXTO DEL CV ADAPTADO.
+3. Adapta el número de entradas (trabajos, estudios, habilidades) al contenido real del CV — añade o elimina bloques de entrada según sea necesario, siempre usando la misma estructura HTML que la plantilla.
+4. Genera ÚNICAMENTE el documento HTML completo. Sin markdown, sin bloques de código, sin texto extra.`
+      : `You are an expert HTML CV editor.
+You are given an HTML template with embedded CSS and a tailored CV in plain text.
+YOUR ONLY JOB is to fill the template with the CV content.
 
 STRICT RULES:
-1. Output ONLY the HTML document. Start with <!DOCTYPE html> and end with </html>. No markdown, no code fences, no explanation text before or after.
-2. Study the ORIGINAL CV TEXT to infer the intended layout:
-   - Single-column vs two-column sidebar layout.
-   - Section heading style (all-caps, title case, underlined, with rule, etc.)
-   - Bullet symbol used (•, -, *, none) — replicate it.
-   - Whether contact info is centered, left-aligned, or split across columns.
-3. Use ONLY the content from TAILORED CV TEXT — not the original.
-4. Design requirements:
-   - A4 paper size. @page { size: A4; margin: 18mm 16mm; }
-   - @media print { body { margin: 0; } }
-   - Base font size: 10.5pt. 'Georgia','Times New Roman',serif for body; 'Arial','Helvetica',sans-serif for headings — or all sans-serif if original reads as a modern document.
-   - Section headings: visually distinct (bold, slightly larger, with bottom border or left accent bar matching the original's style).
-   - No external assets (no CDN fonts, no images, no external CSS). 100% self-contained.
-   - Black text on white background. One optional accent color (#1a3a5c or #333) for heading rules only.
-   - The name/header at the top should be prominent (large, bold).
-5. Clean, valid HTML5 with semantic tags (header, section, h1, h2, ul, etc.).`,
-    user: `ORIGINAL CV TEXT (for layout inference only — do NOT use this content):\n${originalCV}\n\nTAILORED CV TEXT (use this content):\n${tailoredCV}`
+1. Do NOT change any CSS, class names, IDs, or HTML structure.
+2. Only replace the text content of elements (names, titles, companies, dates, bullet points, etc.) with content from TAILORED CV TEXT.
+3. Match the number of entries (jobs, education items, skills) to the actual CV — add or remove entry blocks as needed, always using the same HTML structure as the template.
+4. Output ONLY the complete HTML document. No markdown, no code fences, no extra text.`,
+    user: isEs
+      ? `PLANTILLA HTML:\n${template}\n\nTEXTO DEL CV ADAPTADO:\n${tailoredCV}`
+      : `HTML TEMPLATE:\n${template}\n\nTAILORED CV TEXT:\n${tailoredCV}`
+  };
+};
+
+const buildVisionStylePrompt = (tailoredCV, language) => {
+  const isEs = language === 'es';
+  return {
+    system: isEs
+      ? `Eres un experto en diseño de CVs y desarrollo front-end.
+La imagen adjunta muestra el CV original del usuario.
+Tu tarea es crear un documento HTML completo y autocontenido con CSS embebido que replique fielmente ese diseño visual, usando el contenido del CV ADAPTADO.
+
+REGLAS ESTRICTAS:
+1. Estudia la imagen: disposición (columnas, barra lateral), colores, tipografía, estilo de encabezados de sección, alineación del contacto — y replícalo exactamente.
+2. Usa ÚNICAMENTE el contenido del TEXTO DEL CV ADAPTADO.
+3. Genera ÚNICAMENTE el documento HTML. Comienza con <!DOCTYPE html> y termina con </html>. Sin markdown, sin bloques de código.
+4. Sin activos externos (sin fuentes CDN, sin imágenes externas). 100% autocontenido.
+5. @page { size: A4; margin: 18mm 16mm; } @media print { body { margin: 0; } }`
+      : `You are an expert CV designer and front-end developer.
+The attached image shows the user's original CV.
+Your task is to create a complete, self-contained HTML document with embedded CSS that faithfully replicates that visual design, using the content from TAILORED CV TEXT.
+
+STRICT RULES:
+1. Study the image: layout (columns, sidebar), colors, typography, section heading style, contact alignment — and replicate it exactly.
+2. Use ONLY the content from TAILORED CV TEXT.
+3. Output ONLY the HTML document. Start with <!DOCTYPE html> and end with </html>. No markdown, no code fences.
+4. No external assets (no CDN fonts, no external images). 100% self-contained.
+5. @page { size: A4; margin: 18mm 16mm; } @media print { body { margin: 0; } }`,
+    user: isEs
+      ? `TEXTO DEL CV ADAPTADO (usa este contenido):\n${tailoredCV}`
+      : `TAILORED CV TEXT (use this content):\n${tailoredCV}`
   };
 };
 
@@ -163,29 +175,63 @@ router.post('/', requireAuth(), async (req, res) => {
 });
 
 router.post('/style', requireAuth(), async (req, res) => {
-  const { cv: originalCV, tailoredCV, language = 'en', model = 'meta/llama-3.3-70b-instruct' } = req.body;
+  const {
+    tailoredCV,
+    language = 'en',
+    model = 'meta/llama-3.3-70b-instruct',
+    cvStyle = 'modern',
+    cvPreviewImage = null,
+  } = req.body;
 
-  if (!originalCV || !tailoredCV) {
-    return res.status(400).json({ error: 'originalCV and tailoredCV are required.' });
+  if (!tailoredCV) {
+    return res.status(400).json({ error: 'tailoredCV is required.' });
   }
 
-  const { system, user } = buildStylePrompt(originalCV, tailoredCV, language);
+  let messages;
+  let activeModel = model;
+
+  if (cvPreviewImage) {
+    // Vision path: replicate the uploaded PDF design
+    activeModel = 'meta/llama-3.2-90b-vision-instruct';
+    const { system, user } = buildVisionStylePrompt(tailoredCV, language);
+    messages = [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${cvPreviewImage}` } },
+          { type: 'text', text: user },
+        ],
+      },
+    ];
+  } else {
+    // Template path: fill the chosen pre-built template
+    const allowed = ['classic', 'modern', 'creative', 'minimal'];
+    const style = allowed.includes(cvStyle) ? cvStyle : 'modern';
+    const templatePath = path.join(__dirname, '..', 'templates', `${style}.html`);
+    let template;
+    try {
+      template = fs.readFileSync(templatePath, 'utf8');
+    } catch {
+      return res.status(500).json({ error: `Template "${style}" could not be loaded.` });
+    }
+    const { system, user } = buildTemplateStylePrompt(template, tailoredCV, language);
+    messages = [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ];
+  }
 
   try {
     const response = await client.chat.completions.create({
-      model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      temperature: 0.3,
-      max_tokens: 4000,
+      model: activeModel,
+      messages,
+      temperature: 0.2,
+      max_tokens: 6000,
     });
 
     let html = response.choices[0].message.content.trim();
-    // Strip markdown code fences the model may emit despite instructions
     html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
-    // Ensure output starts with a DOCTYPE
     if (!html.toLowerCase().startsWith('<!doctype')) {
       const idx = html.toLowerCase().indexOf('<!doctype');
       if (idx > -1) html = html.slice(idx);

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV</title>
+  <style>
+    @page { size: A4; margin: 24mm 22mm; }
+    @media print { body { margin: 0; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', 'Arial', sans-serif;
+      font-size: 9.5pt;
+      color: #333;
+      line-height: 1.65;
+      background: #fff;
+    }
+    .header {
+      padding-bottom: 14pt;
+      margin-bottom: 22pt;
+      border-bottom: 1px solid #ddd;
+    }
+    .name {
+      font-size: 21pt;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #111;
+    }
+    .job-title {
+      font-size: 9pt;
+      color: #999;
+      margin-top: 5pt;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .contact {
+      margin-top: 10pt;
+      font-size: 8.5pt;
+      color: #aaa;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3pt 16pt;
+    }
+    .section { margin-bottom: 22pt; }
+    .section-title {
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3.5px;
+      color: #bbb;
+      margin-bottom: 12pt;
+    }
+    .summary { font-size: 9.5pt; color: #555; line-height: 1.7; }
+    .entry { margin-bottom: 14pt; }
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8pt;
+      margin-bottom: 2pt;
+    }
+    .entry-title { font-weight: 600; font-size: 10pt; color: #222; }
+    .entry-dates { font-size: 8.5pt; color: #bbb; white-space: nowrap; }
+    .entry-subtitle { font-size: 8.5pt; color: #999; margin-bottom: 5pt; }
+    ul { padding-left: 0; list-style: none; }
+    ul li { padding-left: 14pt; position: relative; margin-bottom: 2pt; font-size: 9.5pt; }
+    ul li::before { content: '—'; position: absolute; left: 0; color: #ccc; }
+    .skills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4pt 22pt;
+      list-style: none;
+    }
+    .skills-row li { font-size: 9pt; color: #555; padding-left: 0; }
+    .skills-row li::before { display: none; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1 class="name">Jane Doe</h1>
+    <p class="job-title">Senior Software Engineer</p>
+    <div class="contact">
+      <span>jane.doe@email.com</span>
+      <span>(555) 123-4567</span>
+      <span>New York, NY</span>
+      <span>linkedin.com/in/janedoe</span>
+    </div>
+  </header>
+
+  <section class="section">
+    <h2 class="section-title">Summary</h2>
+    <p class="summary">Results-driven software engineer with 8+ years of experience building scalable systems and leading engineering teams. Deep expertise in cloud architecture and full-stack development with a focus on reliability and performance.</p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Experience</h2>
+
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-title">Senior Software Engineer</span>
+        <span class="entry-dates">2020 – Present</span>
+      </div>
+      <div class="entry-subtitle">Acme Corporation, New York, NY</div>
+      <ul>
+        <li>Led microservices migration reducing system latency by 40%.</li>
+        <li>Designed real-time event pipeline processing 2M+ daily events.</li>
+        <li>Mentored 4 junior engineers; established team code review cadence.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-title">Software Engineer</span>
+        <span class="entry-dates">2017 – 2019</span>
+      </div>
+      <div class="entry-subtitle">Tech Startup Inc., San Francisco, CA</div>
+      <ul>
+        <li>Built REST APIs serving 500K daily active users at 99.9% uptime.</li>
+        <li>Implemented CI/CD pipelines reducing deployment time by 60%.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Education</h2>
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-title">B.S. Computer Science</span>
+        <span class="entry-dates">2013 – 2017</span>
+      </div>
+      <div class="entry-subtitle">University of California, Berkeley</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Skills</h2>
+    <ul class="skills-row">
+      <li>JavaScript / TypeScript</li>
+      <li>Python</li>
+      <li>React</li>
+      <li>Node.js</li>
+      <li>PostgreSQL</li>
+      <li>AWS</li>
+      <li>Docker</li>
+    </ul>
+  </section>
+</body>
+</html>
