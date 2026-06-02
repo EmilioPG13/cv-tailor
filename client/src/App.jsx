@@ -1302,11 +1302,11 @@ function TailorPage({ t, lang, tweaks }) {
             >
               {modelsLoading ? (
                 <option>{t.modelLoading}</option>
-              ) : models.length > 0 ? (
-                models.map(m => <option key={m.id} value={m.id}>{friendlyModelName(m.id)}</option>)
-              ) : (
-                <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
-              )}
+              ) : (models.length > 0 ? models : [
+                { id: 'meta/llama-3.3-70b-instruct' },
+                { id: 'meta/llama-3.1-405b-instruct' },
+                { id: 'mistralai/mistral-7b-instruct-v0.3' },
+              ]).map(m => <option key={m.id} value={m.id}>{friendlyModelName(m.id)}</option>)}
             </select>
           </div>
         </div>
