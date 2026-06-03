@@ -36,7 +36,13 @@
       "Read(//tmp/**)",
       "Bash(curl -s http://localhost:3001/api/admin/stats)",
       "Bash(netstat -anop tcp)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__list_deployments",
+      "mcp__claude_ai_Vercel__get_project",
+      "Bash(git log *)",
+      "mcp__claude_ai_Supabase__list_tables"
     ]
   }
 }
