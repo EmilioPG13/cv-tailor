@@ -131,7 +131,7 @@ STRICT RULES:
   };
 };
 
-const NVIDIA_MODELS = [
+const NVIDIA_MODELS_FALLBACK = [
   'meta/llama-3.3-70b-instruct',
   'meta/llama-3.1-405b-instruct',
   'meta/llama-3.1-70b-instruct',
@@ -145,8 +145,21 @@ const NVIDIA_MODELS = [
   'microsoft/phi-3.5-mini-instruct',
 ].map(id => ({ id }));
 
-router.get('/models', (req, res) => {
-  res.json({ models: NVIDIA_MODELS });
+router.get('/models', async (req, res) => {
+  try {
+    const seen = new Set();
+    const models = [];
+    for await (const model of client.models.list()) {
+      if (!model.id.includes('embed') && !model.id.includes('rerank') && !seen.has(model.id)) {
+        seen.add(model.id);
+        models.push({ id: model.id });
+      }
+    }
+    res.json({ models: models.length > 0 ? models : NVIDIA_MODELS_FALLBACK });
+  } catch (error) {
+    console.error('Models fetch error:', error.message);
+    res.json({ models: NVIDIA_MODELS_FALLBACK });
+  }
 });
 
 router.post('/', requireAuth(), async (req, res) => {
