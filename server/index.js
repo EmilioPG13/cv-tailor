@@ -14,7 +14,10 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173'
 }));
 app.use(express.json({ limit: '2mb' }));
-app.use(clerkMiddleware());
+app.use(clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+  secretKey: process.env.CLERK_SECRET_KEY,
+}));
 app.use('/api/tailor', tailorRoute);
 app.use('/api/history', historyRoute);
 app.use('/api/scrape', scrapeRoute);
