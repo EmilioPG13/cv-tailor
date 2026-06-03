@@ -131,22 +131,22 @@ STRICT RULES:
   };
 };
 
-router.get('/models', async (req, res) => {
-  try {
-    const response = await fetch('https://integrate.api.nvidia.com/v1/models', {
-      headers: { 'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}` }
-    });
-    const data = await response.json();
-    const seen = new Set();
-    const models = (data.data || [])
-      .filter(m => !m.id.includes('embed') && !m.id.includes('rerank'))
-      .filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
-      .map(m => ({ id: m.id }));
-    res.json({ models });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Could not fetch model list.' });
-  }
+const NVIDIA_MODELS = [
+  'meta/llama-3.3-70b-instruct',
+  'meta/llama-3.1-405b-instruct',
+  'meta/llama-3.1-70b-instruct',
+  'meta/llama-3.1-8b-instruct',
+  'mistralai/mistral-large-2-instruct',
+  'mistralai/mixtral-8x7b-instruct-v0.1',
+  'mistralai/mistral-7b-instruct-v0.3',
+  'google/gemma-2-27b-it',
+  'google/gemma-2-9b-it',
+  'nvidia/llama-3.1-nemotron-70b-instruct',
+  'microsoft/phi-3.5-mini-instruct',
+].map(id => ({ id }));
+
+router.get('/models', (req, res) => {
+  res.json({ models: NVIDIA_MODELS });
 });
 
 router.post('/', requireAuth(), async (req, res) => {
