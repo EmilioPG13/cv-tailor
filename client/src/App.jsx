@@ -204,17 +204,22 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
 
           {/* Sign in / User */}
           {isSignedIn ? (
-            <UserButton appearance={{ elements: { avatarBox: { width: '34px', height: '34px' } } }}>
-              {isAdmin && (
-                <UserButton.MenuItems>
-                  <UserButton.Link
-                    label="Admin"
-                    labelIcon={<IconSettings size={14} />}
-                    href="/admin"
-                  />
-                </UserButton.MenuItems>
-              )}
-            </UserButton>
+            <div className={cn(
+              "inline-flex rounded-full transition-all duration-200 shrink-0",
+              isAdmin && "p-0.5 bg-linear-to-br from-yellow-200 via-amber-400 to-yellow-600 shadow-[0_0_8px_2px_rgba(251,191,36,0.3)]"
+            )}>
+              <UserButton appearance={{ elements: { avatarBox: { width: '34px', height: '34px', borderRadius: '9999px' } } }}>
+                {isAdmin && (
+                  <UserButton.MenuItems>
+                    <UserButton.Link
+                      label="Admin"
+                      labelIcon={<IconSettings size={14} />}
+                      href="/admin"
+                    />
+                  </UserButton.MenuItems>
+                )}
+              </UserButton>
+            </div>
           ) : (
             <SignInButton mode="modal">
               <Button variant="outline" size="sm">Sign in</Button>
