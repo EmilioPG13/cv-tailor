@@ -17,6 +17,7 @@ import TemplatesPage from './pages/TemplatesPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import AuthGuard from './components/AuthGuard.jsx';
+import { TailorProvider, useTailor } from './context/TailorContext.jsx';
 
 /* ─────────────────────────────────────────────
    Module-level constants & pure helpers
@@ -941,34 +942,36 @@ function TailorPage({ t, lang, tweaks }) {
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
 
-  /* ── Core state ── */
-  const [cv, setCv] = useState("");
-  const [jd, setJd] = useState("");
-  const [status, setStatus] = useState("idle");
-  const [streamProgress, setStreamProgress] = useState(0);
-  const [result, setResult] = useState(null);
-  const [tab, setTab] = useState("bullets");
-  const [copied, setCopied] = useState(null);
-  const [error, setError] = useState(null);
-  const [uploadErr, setUploadErr] = useState(null);
+  /* ── Context state (persists across navigation) ── */
+  const {
+    cv, setCv, jd, setJd,
+    status, streamProgress, result, error,
+    styledCV, styleStatus, styleError,
+    cvStyle, setCvStyle, cvPreviewImage,
+    tone, setTone,
+    selectedModel, setSelectedModel, models, modelsLoading,
+    historyVersion,
+    handleClear, handleLoadSample, runTailor,
+    handleUpload: ctxHandleUpload,
+  } = useTailor();
+
+  /* ── Local UI state (transient, OK to lose on navigation) ── */
+  const [tab,         setTab]         = useState('bullets');
+  const [copied,      setCopied]      = useState(null);
+  const [uploadErr,   setUploadErr]   = useState(null);
   const [uploadingTo, setUploadingTo] = useState(null);
   const [recentHistory, setRecentHistory] = useState([]);
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
-  const [jdMode, setJdMode] = useState('text'); // 'text' | 'url'
-  const [scrapeUrl, setScrapeUrl] = useState('');
-  const [scraping, setScraping] = useState(false);
+  const [jdMode,      setJdMode]      = useState('text');
+  const [scrapeUrl,   setScrapeUrl]   = useState('');
+  const [scraping,    setScraping]    = useState(false);
   const [scrapeError, setScrapeError] = useState(null);
-  const [tone, setTone] = useState('professional');
-  const [models, setModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('meta/llama-3.3-70b-instruct');
-  const [modelsLoading, setModelsLoading] = useState(false);
-  const [styledCV, setStyledCV] = useState(null);
-  const [styleStatus, setStyleStatus] = useState('idle');
-  const [styleError, setStyleError] = useState(null);
-  const [cvStyle, setCvStyle] = useState('modern');
-  const [cvPreviewImage, setCvPreviewImage] = useState(null);
 
-  /* ── Load template or history entry from router state ── */
+  /* Reset tab to bullets whenever a new tailor run starts */
+  useEffect(() => {
+    if (status === 'streaming') setTab('bullets');
+  }, [status]);
+
+  /* Load template or history entry injected via router state */
   useEffect(() => {
     if (location.state?.templateText) setCv(location.state.templateText);
     if (location.state?.jdText)       setJd(location.state.jdText);
@@ -977,7 +980,7 @@ function TailorPage({ t, lang, tweaks }) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Fetch recent history for sidebar widget ── */
+  /* Refetch history sidebar whenever a new tailor completes */
   useEffect(() => {
     if (!isSignedIn) return;
     (async () => {
@@ -989,33 +992,17 @@ function TailorPage({ t, lang, tweaks }) {
         setRecentHistory(data.slice(0, 5).map(e => ({ ...e, when: relativeTime(e.createdAt) })));
       } catch {}
     })();
-  }, [historyRefreshKey, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [historyVersion, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Fetch available NVIDIA NIM models on mount ── */
-  useEffect(() => {
-    setModelsLoading(true);
-    axios.get(`${import.meta.env.VITE_API_URL}/api/tailor/models`)
-      .then(({ data }) => { if (data.models?.length) setModels(data.models); })
-      .catch(() => {})
-      .finally(() => setModelsLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const canSubmit = isSignedIn && cv.trim().length > 30 && jd.trim().length > 30 && status !== "streaming";
+  const canSubmit = isSignedIn && cv.trim().length > 30 && jd.trim().length > 30 && status !== 'streaming';
 
   /* ── Handlers ── */
-  const handleLoadSample = () => { setCv(SAMPLE[lang].cv); setJd(SAMPLE[lang].jd); };
-  const handleClear = () => { setCv(""); setJd(""); setResult(null); setStatus("idle"); setError(null); setStyledCV(null); setStyleStatus('idle'); setStyleError(null); setCvPreviewImage(null); };
-
   const handleUpload = (target, file) => {
     if (!file) return;
     setUploadErr(null);
     setUploadingTo(target);
-    extractText(file)
-      .then(({ text, previewImage }) => {
-        (target === "cv" ? setCv : setJd)(text);
-        if (target === "cv") setCvPreviewImage(previewImage);
-      })
-      .catch(err => { setUploadErr(err?.message || String(err)); })
+    ctxHandleUpload(target, file)
+      .catch(err => setUploadErr(err?.message || String(err)))
       .finally(() => setUploadingTo(null));
   };
 
@@ -1025,10 +1012,10 @@ function TailorPage({ t, lang, tweaks }) {
     setTimeout(() => setCopied(null), 1200);
   };
 
-  const dl = (filename, text, mime = "text/plain") => {
+  const dl = (filename, text, mime = 'text/plain') => {
     const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
@@ -1053,76 +1040,7 @@ function TailorPage({ t, lang, tweaks }) {
     setScraping(false);
   };
 
-  /* ── API call ── */
-  const runTailor = useCallback(async () => {
-    setStatus("streaming");
-    setResult(null);
-    setStreamProgress(0);
-    setTab("bullets");
-    setError(null);
-    setStyledCV(null);
-    setStyleStatus('idle');
-    setStyleError(null);
-    const startTime = performance.now();
-    const estimatedDuration = 12000;
-    let animFrame;
-    const tick = () => {
-      const p = Math.min(0.92, (performance.now() - startTime) / estimatedDuration);
-      setStreamProgress(p);
-      if (p < 0.92) animFrame = requestAnimationFrame(tick);
-    };
-    animFrame = requestAnimationFrame(tick);
-    try {
-      const token = await getToken();
-      const headers = { Authorization: `Bearer ${token}` };
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/tailor`,
-        { cv, jobDescription: jd, language: lang, tone, model: selectedModel },
-        { headers }
-      );
-      cancelAnimationFrame(animFrame);
-      setStreamProgress(1);
-      const parsed = parseApiResult(data.result, lang);
-      setResult(parsed);
-      setStatus("done");
-
-      /* Generate styled HTML CV (fire-and-forget) */
-      setStyleStatus('loading');
-      getToken().then(token =>
-        axios.post(
-          `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { tailoredCV: parsed.tailoredCV, language: lang, model: selectedModel, cvStyle, cvPreviewImage },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-      ).then(({ data }) => {
-        setStyledCV(data.html);
-        setStyleStatus('done');
-      }).catch(err => {
-        setStyleError(err.response?.data?.error || t.styleError);
-        setStyleStatus('error');
-      });
-
-      /* Save to history (fire-and-forget) */
-      axios.post(`${import.meta.env.VITE_API_URL}/api/history`, {
-        role:       extractJobTitle(jd),
-        company:    extractCompanyName(jd),
-        lang,
-        fit:        parsed.fit,
-        cv,
-        jd,
-        tailoredCV: parsed.tailoredCV,
-        cover:      parsed.cover,
-      }, { headers }).then(() => setHistoryRefreshKey(k => k + 1)).catch(() => {});
-
-    } catch (err) {
-      cancelAnimationFrame(animFrame);
-      setError(err.response?.data?.error || err.message || "Failed to tailor CV.");
-      setStatus("idle");
-      setStreamProgress(0);
-    }
-  }, [cv, jd, lang, tone, selectedModel, cvStyle, cvPreviewImage, t, getToken]);
-
-  /* ── StylePicker (closes over cvStyle, setCvStyle, cvPreviewImage) ── */
+  /* ── Style options ── */
   const STYLE_OPTIONS = [
     { id: 'classic',  label: 'Classic',  desc: 'Clean & ATS-safe' },
     { id: 'modern',   label: 'Modern',   desc: 'Polished accent color' },
@@ -1130,7 +1048,7 @@ function TailorPage({ t, lang, tweaks }) {
     { id: 'minimal',  label: 'Minimal',  desc: 'Executive whitespace' },
   ];
 
-  /* ── UploadBtn (closes over uploadingTo, handleUpload, t) ── */
+  /* ── UploadBtn ── */
   function UploadBtn({ target }) {
     const ref = useRef(null);
     const busy = uploadingTo === target;
@@ -1141,7 +1059,7 @@ function TailorPage({ t, lang, tweaks }) {
           type="file"
           className="hidden"
           accept=".pdf,.docx,.doc,.rtf,.txt,.md,.csv,.json,.log,.tex,.html,.htm,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/*"
-          onChange={e => { handleUpload(target, e.target.files?.[0]); e.target.value = ""; }}
+          onChange={e => { handleUpload(target, e.target.files?.[0]); e.target.value = ''; }}
         />
         <Button variant="ghost" size="xs" disabled={busy} onClick={() => ref.current?.click()}>
           <IconUpload size={12} /> {busy ? t.uploading : t.upload}
@@ -1308,8 +1226,8 @@ function TailorPage({ t, lang, tweaks }) {
               {modelsLoading ? (
                 <option>{t.modelLoading}</option>
               ) : (models.length > 0 ? models : [
+                { id: 'nvidia/llama-3.1-nemotron-70b-instruct' },
                 { id: 'meta/llama-3.3-70b-instruct' },
-                { id: 'meta/llama-3.1-405b-instruct' },
                 { id: 'mistralai/mistral-7b-instruct-v0.3' },
               ]).map(m => <option key={m.id} value={m.id}>{friendlyModelName(m.id)}</option>)}
             </select>
@@ -1440,13 +1358,15 @@ export default function App() {
 
       <TopBar t={t} lang={lang} setLang={setLang} tweaks={tweaks} setTweak={setTweak} />
 
-      <Routes>
-        <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
-        <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
-        <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
-        <Route path="/analytics" element={<AuthGuard><AnalyticsPage /></AuthGuard>} />
-        <Route path="/admin"     element={<AuthGuard><AdminPage /></AuthGuard>} />
-      </Routes>
+      <TailorProvider lang={lang} t={t}>
+        <Routes>
+          <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
+          <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
+          <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
+          <Route path="/analytics" element={<AuthGuard><AnalyticsPage /></AuthGuard>} />
+          <Route path="/admin"     element={<AuthGuard><AdminPage /></AuthGuard>} />
+        </Routes>
+      </TailorProvider>
 
       <TweaksPanel
         open={tweaksOpen}
