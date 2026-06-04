@@ -22,6 +22,9 @@ async function requireAdmin(req, res, next) {
     if (user.publicMetadata?.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' });
     }
+    if (!user.twoFactorEnabled) {
+      return res.status(403).json({ error: 'Admin accounts require two-factor authentication. Enable it in your account settings.' });
+    }
     next();
   } catch (err) {
     console.error('[requireAdmin] error:', err.message);
@@ -44,7 +47,7 @@ router.get('/stats', requireAuth(), requireAdmin, async (req, res) => {
   if (e1 || e2 || e3) return res.status(500).json({ error: 'Failed to fetch stats' });
 
   // unique users: count distinct user_ids
-  const { data: uniqueRows, error: e4 } = await supabase
+  const { data: uniqueRows, error: e4 } = await getSupabase()
     .from('history')
     .select('user_id')
     .limit(10000);
@@ -58,7 +61,7 @@ router.get('/stats', requireAuth(), requireAdmin, async (req, res) => {
 
 // GET /api/admin/templates
 router.get('/templates', requireAuth(), requireAdmin, async (req, res) => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('templates')
     .select('*')
     .order('created_at', { ascending: false });
@@ -74,7 +77,7 @@ router.post('/templates', requireAuth(), requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'name and content are required.' });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('templates')
     .insert({ name, content })
     .select()
@@ -91,7 +94,7 @@ router.put('/templates/:id', requireAuth(), requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'name and content are required.' });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('templates')
     .update({ name, content })
     .eq('id', req.params.id)
@@ -104,7 +107,7 @@ router.put('/templates/:id', requireAuth(), requireAdmin, async (req, res) => {
 
 // DELETE /api/admin/templates/:id
 router.delete('/templates/:id', requireAuth(), requireAdmin, async (req, res) => {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('templates')
     .delete()
     .eq('id', req.params.id);
