@@ -38,7 +38,6 @@ export default function TemplatesPage({ t, lang }) {
           >
             <CardHeader>
               <div className="flex items-center gap-2.5">
-                <span className="text-2xl leading-none">{tpl.icon}</span>
                 <CardTitle>{lang === 'es' ? tpl.nameEs : tpl.nameEn}</CardTitle>
               </div>
               <CardDescription>

@@ -1,7 +1,6 @@
 export const TEMPLATES = [
   {
     id: "tech",
-    icon: "💻",
     nameEn: "Tech / Engineering",
     nameEs: "Tecnología / Ingeniería",
     descEn: "Software, data, DevOps roles. Action-verb bullet format.",
@@ -47,7 +46,6 @@ Herramientas: [ej. Docker, Kubernetes, PostgreSQL, AWS]`,
   },
   {
     id: "creative",
-    icon: "🎨",
     nameEn: "Creative / Design",
     nameEs: "Creativo / Diseño",
     descEn: "UX, product design, brand, motion. Portfolio-first format.",
@@ -93,7 +91,6 @@ PORTAFOLIO
   },
   {
     id: "academic",
-    icon: "🎓",
     nameEn: "Academic / Research",
     nameEs: "Académico / Investigación",
     descEn: "CV for academia, research roles, PhD applications.",
@@ -145,7 +142,6 @@ Herramientas: [ej. Python, R, SPSS, LaTeX]`,
   },
   {
     id: "business",
-    icon: "📊",
     nameEn: "Business / Operations",
     nameEs: "Negocios / Operaciones",
     descEn: "Strategy, finance, consulting, ops, project management.",
@@ -189,7 +185,6 @@ Idiomas: [idiomas hablados]`,
   },
   {
     id: "executive",
-    icon: "🏢",
     nameEn: "Executive / Leadership",
     nameEs: "Ejecutivo / Liderazgo",
     descEn: "C-suite, VP, director-level. P&L and org-building focus.",
