@@ -75,24 +75,38 @@ CV ADAPTADO
 
 CARTA DE PRESENTACIÓN
 [carta de presentación aquí]`,
-  style_prompt_en: `You are an expert HTML CV editor.
-You are given an HTML template with embedded CSS and a tailored CV in plain text.
-YOUR ONLY JOB is to fill the template with the CV content.
+  style_prompt_en: `You are an expert HTML/CSS developer and CV designer.
+You receive three inputs:
+1. CSS STYLES — the complete stylesheet that defines the visual identity (colors, layout, typography, spacing).
+2. HTML SKELETON — the HTML structure showing element types and class names, without real content.
+3. TAILORED CV TEXT — the candidate's information to place into the document.
+
+YOUR TASK: Produce a complete, self-contained HTML document that:
+- Embeds the CSS STYLES block verbatim inside a <style> tag in <head> — do not alter any rule.
+- Replicates the HTML SKELETON exactly: same elements, same class names, same nesting hierarchy.
+- Fills each element with the matching content from TAILORED CV TEXT.
+- Adjusts repeating blocks (jobs, education items, skills) to match the actual CV data, always using the same HTML pattern shown in the skeleton.
 
 STRICT RULES:
-1. Do NOT change any CSS, class names, IDs, or HTML structure.
-2. Only replace the text content of elements (names, titles, companies, dates, bullet points, etc.) with content from TAILORED CV TEXT.
-3. Match the number of entries (jobs, education items, skills) to the actual CV — add or remove entry blocks as needed, always using the same HTML structure as the template.
-4. Output ONLY the complete HTML document. No markdown, no code fences, no extra text.`,
-  style_prompt_es: `Eres un experto en edición de CVs en HTML.
-Se te proporciona una plantilla HTML con CSS embebido y el texto de un CV adaptado.
-TU ÚNICA TAREA es rellenar la plantilla con el contenido del CV.
+1. Do NOT invent new CSS classes, IDs, or inline styles beyond what the skeleton shows.
+2. Do NOT modify the CSS.
+3. Output ONLY the HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown, no code fences, no commentary.`,
+  style_prompt_es: `Eres un experto en HTML/CSS y diseño de CVs.
+Recibes tres entradas:
+1. ESTILOS CSS — la hoja de estilos completa que define la identidad visual (colores, maquetación, tipografía, espaciado).
+2. ESQUELETO HTML — la estructura HTML con tipos de elemento y nombres de clase, sin contenido real.
+3. TEXTO DEL CV ADAPTADO — la información del candidato que debes insertar en el documento.
+
+TU TAREA: Generar un documento HTML completo y autocontenido que:
+- Embeba el bloque ESTILOS CSS tal cual dentro de una etiqueta <style> en <head> — sin alterar ninguna regla.
+- Replique el ESQUELETO HTML exactamente: mismos elementos, mismos nombres de clase, misma jerarquía de anidamiento.
+- Rellene cada elemento con el contenido correspondiente del TEXTO DEL CV ADAPTADO.
+- Ajuste los bloques repetidos (empleos, estudios, habilidades) para coincidir con el CV real, usando siempre el mismo patrón HTML del esqueleto.
 
 REGLAS ESTRICTAS:
-1. NO modifiques ningún CSS, nombres de clase, IDs ni estructura HTML.
-2. Solo reemplaza el texto de los elementos (nombres, títulos, empresas, fechas, viñetas, etc.) con el contenido del TEXTO DEL CV ADAPTADO.
-3. Adapta el número de entradas (trabajos, estudios, habilidades) al contenido real del CV — añade o elimina bloques de entrada según sea necesario, siempre usando la misma estructura HTML que la plantilla.
-4. Genera ÚNICAMENTE el documento HTML completo. Sin markdown, sin bloques de código, sin texto extra.`,
+1. NO inventes nuevas clases CSS, IDs ni estilos en línea más allá de lo que muestra el esqueleto.
+2. NO modifiques el CSS.
+3. Genera ÚNICAMENTE el documento HTML, comenzando con <!DOCTYPE html> y terminando con </html>. Sin markdown, sin bloques de código, sin comentarios.`,
 };
 
 const SETTINGS_TTL_MS = 5 * 60 * 1000;
@@ -128,12 +142,25 @@ const buildPrompt = (cv, jobDescription, language, tone, settings) => {
   return { system, user };
 };
 
+function extractCssAndSkeleton(html) {
+  const cssMatch = html.match(/<style[^>]*>[\s\S]*?<\/style>/i);
+  const css = cssMatch ? cssMatch[0] : '';
+  const bodyMatch = html.match(/<body[^>]*>[\s\S]*?<\/body>/i);
+  if (!bodyMatch) return { css, skeleton: '<body></body>' };
+  // Replace non-whitespace text nodes with '…' to strip sample content while preserving structure
+  const skeleton = bodyMatch[0].replace(/(?<=>)([^<]+)(?=<)/g, (_, text) =>
+    text.trim() ? '…' : text
+  );
+  return { css, skeleton };
+}
+
 const buildTemplateStylePrompt = (template, tailoredCV, language, settings) => {
   const isEs = language === 'es';
+  const { css, skeleton } = extractCssAndSkeleton(template);
   const system = isEs ? settings.style_prompt_es : settings.style_prompt_en;
   const user = isEs
-    ? `PLANTILLA HTML:\n${template}\n\nTEXTO DEL CV ADAPTADO:\n${tailoredCV}`
-    : `HTML TEMPLATE:\n${template}\n\nTAILORED CV TEXT:\n${tailoredCV}`;
+    ? `ESTILOS CSS:\n${css}\n\nESQUELETO HTML:\n${skeleton}\n\nTEXTO DEL CV ADAPTADO:\n${tailoredCV}`
+    : `CSS STYLES:\n${css}\n\nHTML SKELETON:\n${skeleton}\n\nTAILORED CV TEXT:\n${tailoredCV}`;
   return { system, user };
 };
 
