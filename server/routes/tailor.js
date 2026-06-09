@@ -211,6 +211,15 @@ const NVIDIA_MODELS_FALLBACK = [
   'microsoft/phi-4-mini-instruct',
 ].map(id => ({ id }));
 
+router.get('/info', async (req, res) => {
+  try {
+    const settings = await getSettings();
+    res.json({ llm_model: settings.llm_model, design_model: settings.design_model });
+  } catch {
+    res.json({ llm_model: FALLBACK_SETTINGS.llm_model, design_model: FALLBACK_SETTINGS.design_model });
+  }
+});
+
 router.get('/models', async (req, res) => {
   try {
     const seen = new Set();
