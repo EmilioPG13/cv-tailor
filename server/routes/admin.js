@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth, getAuth, clerkClient } from '@clerk/express';
 import { createClient } from '@supabase/supabase-js';
+import { invalidateSettingsCache } from '../settingsCache.js';
 
 const router = express.Router();
 
@@ -114,6 +115,43 @@ router.delete('/templates/:id', requireAuth(), requireAdmin, async (req, res) =>
 
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
+});
+
+// GET /api/admin/settings
+router.get('/settings', requireAuth(), requireAdmin, async (req, res) => {
+  const { data, error } = await getSupabase()
+    .from('app_settings')
+    .select('key, value, updated_at')
+    .order('key');
+
+  if (error) return res.status(500).json({ error: error.message });
+  // Return as key→value map for easier consumption
+  const map = {};
+  for (const row of data) map[row.key] = row.value;
+  res.json(map);
+});
+
+// PUT /api/admin/settings/:key
+router.put('/settings/:key', requireAuth(), requireAdmin, async (req, res) => {
+  const { key } = req.params;
+  const { value } = req.body;
+
+  if (value === undefined || value === null) {
+    return res.status(400).json({ error: 'value is required.' });
+  }
+
+  const { data, error } = await getSupabase()
+    .from('app_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Invalidate the tailor route's in-memory cache so next request picks up new value
+  invalidateSettingsCache();
+
+  res.json(data);
 });
 
 export default router;

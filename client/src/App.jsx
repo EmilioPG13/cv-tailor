@@ -949,7 +949,6 @@ function TailorPage({ t, lang, tweaks }) {
     styledCV, styleStatus, styleError,
     cvStyle, setCvStyle, cvPreviewImage,
     tone, setTone,
-    selectedModel, setSelectedModel, models, modelsLoading,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
     handleUpload: ctxHandleUpload,
@@ -1192,7 +1191,7 @@ function TailorPage({ t, lang, tweaks }) {
             )}
           </div>
         </div>
-        {/* Tone + Model picker */}
+        {/* Tone picker */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
@@ -1214,23 +1213,6 @@ function TailorPage({ t, lang, tweaks }) {
                 {label}
               </button>
             ))}
-          </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-[11px] text-[var(--muted-fg)]">{t.modelLabel}:</span>
-            <select
-              value={selectedModel}
-              onChange={e => setSelectedModel(e.target.value)}
-              disabled={modelsLoading}
-              className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-2 py-1 text-[11px] text-[var(--fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50"
-            >
-              {modelsLoading ? (
-                <option>{t.modelLoading}</option>
-              ) : (models.length > 0 ? models : [
-                { id: 'nvidia/llama-3.1-nemotron-70b-instruct' },
-                { id: 'meta/llama-3.3-70b-instruct' },
-                { id: 'mistralai/mistral-7b-instruct-v0.3' },
-              ]).map(m => <option key={m.id} value={m.id}>{friendlyModelName(m.id)}</option>)}
-            </select>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
