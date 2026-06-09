@@ -69,20 +69,8 @@ export function TailorProvider({ lang, t, children }) {
   const [cvStyle,        setCvStyle]        = useState('modern');
   const [cvPreviewImage, setCvPreviewImage] = useState(null);
   const [tone,           setTone]           = useState('professional');
-  const [selectedModel,  setSelectedModel]  = useState('nvidia/llama-3.1-nemotron-70b-instruct');
-  const [models,         setModels]         = useState([]);
-  const [modelsLoading,  setModelsLoading]  = useState(false);
   // Incrementing this triggers TailorPage's history sidebar to refetch
   const [historyVersion, setHistoryVersion] = useState(0);
-
-  // ── Fetch models once (lives here so it persists across navigation) ──
-  useEffect(() => {
-    setModelsLoading(true);
-    axios.get(`${import.meta.env.VITE_API_URL}/api/tailor/models`)
-      .then(({ data }) => { if (data.models?.length) setModels(data.models); })
-      .catch(() => {})
-      .finally(() => setModelsLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ───────────────────────────────────────────────────
   const handleClear = useCallback(() => {
@@ -133,7 +121,7 @@ export function TailorProvider({ lang, t, children }) {
       const headers = { Authorization: `Bearer ${token}` };
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/tailor`,
-        { cv, jobDescription: jd, language: lang, tone, model: selectedModel },
+        { cv, jobDescription: jd, language: lang, tone },
         { headers }
       );
       cancelAnimationFrame(animFrame);
@@ -148,7 +136,7 @@ export function TailorProvider({ lang, t, children }) {
       getToken().then(tok =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { tailoredCV: parsed.tailoredCV, language: lang, model: selectedModel, cvStyle, cvPreviewImage },
+          { tailoredCV: parsed.tailoredCV, language: lang, cvStyle, cvPreviewImage },
           { headers: { Authorization: `Bearer ${tok}` } }
         )
       ).then(({ data: sd }) => {
@@ -178,7 +166,7 @@ export function TailorProvider({ lang, t, children }) {
       setStatus('idle');
       setStreamProgress(0);
     }
-  }, [cv, jd, tone, selectedModel, cvStyle, cvPreviewImage, getToken]);
+  }, [cv, jd, tone, cvStyle, cvPreviewImage, getToken]);
 
   return (
     <TailorContext.Provider value={{
@@ -187,7 +175,6 @@ export function TailorProvider({ lang, t, children }) {
       error, styledCV, styleStatus, styleError,
       cvStyle, setCvStyle, cvPreviewImage, setCvPreviewImage,
       tone, setTone,
-      selectedModel, setSelectedModel, models, modelsLoading,
       historyVersion,
       handleClear, handleLoadSample, handleUpload, runTailor,
     }}>
