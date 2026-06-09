@@ -1229,7 +1229,9 @@ function TailorPage({ t, lang, tweaks }) {
                   onClick={() => setTone(id)}
                   className={cn(
                     "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                    isSelected
+                    isSelected && isSuggested
+                      ? "bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1"
+                      : isSelected
                       ? "bg-[var(--accent)] text-[var(--accent-fg)]"
                       : isSuggested
                       ? "ring-1 ring-violet-500 text-violet-500 bg-transparent"
@@ -1238,13 +1240,22 @@ function TailorPage({ t, lang, tweaks }) {
                 >
                   {isSuggested && <IconSparkle className="h-3 w-3 shrink-0" />}
                   {label}
-                  {isSelected && isSuggested && (
-                    <span className="rounded bg-violet-500/20 px-1 text-[9px] font-bold uppercase tracking-wide text-violet-400">AI</span>
+                  {isSuggested && (
+                    <span className={cn(
+                      "rounded px-1 text-[9px] font-bold uppercase tracking-wide",
+                      isSelected ? "bg-white/20 text-white" : "bg-violet-500/20 text-violet-400"
+                    )}>AI</span>
                   )}
                 </button>
               );
             })}
           </div>
+          {suggestedTone && suggestedTone === tone && (
+            <p className="w-full text-[11px] text-violet-400 mt-0.5 flex items-center gap-1">
+              <IconSparkle className="h-3 w-3 shrink-0" />
+              AI picked this tone based on the job description
+            </p>
+          )}
           {suggestedTone && suggestedTone !== tone && (
             <p className="w-full text-[11px] text-[var(--muted-fg)] mt-0.5">
               AI suggests{' '}
