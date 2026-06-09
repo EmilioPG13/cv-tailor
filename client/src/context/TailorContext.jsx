@@ -69,36 +69,8 @@ export function TailorProvider({ lang, t, children }) {
   const [cvStyle,        setCvStyle]        = useState('modern');
   const [cvPreviewImage, setCvPreviewImage] = useState(null);
   const [tone,           setTone]           = useState('professional');
-  const [suggestedTone,  setSuggestedTone]  = useState(null);
-  const [detectingTone,  setDetectingTone]  = useState(false);
   // Incrementing this triggers TailorPage's history sidebar to refetch
   const [historyVersion, setHistoryVersion] = useState(0);
-
-  // ── Tone auto-detection ────────────────────────────────────────
-  useEffect(() => {
-    if (jd.length < 80) {
-      setSuggestedTone(null);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setDetectingTone(true);
-      try {
-        const token = await getToken();
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/tailor/detect-tone`,
-          { jobDescription: jd, language: langRef.current },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setSuggestedTone(data.tone);
-        setTone(data.tone);
-      } catch {
-        // silent fail — non-blocking
-      } finally {
-        setDetectingTone(false);
-      }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [jd, getToken]);
 
   // ── Handlers ───────────────────────────────────────────────────
   const handleClear = useCallback(() => {
@@ -202,7 +174,7 @@ export function TailorProvider({ lang, t, children }) {
       status, streamProgress, result,
       error, styledCV, styleStatus, styleError,
       cvStyle, setCvStyle, cvPreviewImage, setCvPreviewImage,
-      tone, setTone, suggestedTone, detectingTone,
+      tone, setTone,
       historyVersion,
       handleClear, handleLoadSample, handleUpload, runTailor,
     }}>
