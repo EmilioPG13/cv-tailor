@@ -42,7 +42,9 @@
       "mcp__claude_ai_Vercel__list_deployments",
       "mcp__claude_ai_Vercel__get_project",
       "Bash(git log *)",
-      "mcp__claude_ai_Supabase__list_tables"
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const u=JSON.parse\\(d\\).data[0];console.log\\(JSON.stringify\\({id:u.id,public_metadata:u.public_metadata,two_factor_enabled:u.two_factor_enabled},null,2\\)\\)}\\)\")"
     ]
   }
 }
