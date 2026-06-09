@@ -937,6 +937,11 @@ function friendlyModelName(id) {
   return name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
+function shortModelName(id) {
+  const words = friendlyModelName(id).split(' ');
+  return words.length > 3 ? words.slice(-3).join(' ') : words.join(' ');
+}
+
 function TailorPage({ t, lang, tweaks }) {
   const location = useLocation();
   const { isSignedIn } = useUser();
@@ -948,7 +953,7 @@ function TailorPage({ t, lang, tweaks }) {
     status, streamProgress, result, error,
     styledCV, styleStatus, styleError,
     cvStyle, setCvStyle, cvPreviewImage,
-    tone, setTone, suggestedTone, detectingTone,
+    tone, setTone,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
     handleUpload: ctxHandleUpload,
@@ -1212,80 +1217,49 @@ function TailorPage({ t, lang, tweaks }) {
         </div>
         {/* Tone picker */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
-            {detectingTone && (
-              <span className="flex items-center gap-1 text-[11px] text-[var(--muted-fg)]">
-                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Detecting…
-              </span>
-            )}
             {[
               { id: 'professional',   label: 'Professional' },
               { id: 'conversational', label: 'Conversational' },
               { id: 'enthusiastic',   label: 'Enthusiastic' },
-            ].map(({ id, label }) => {
-              const isSelected  = tone === id;
-              const isSuggested = suggestedTone === id;
-              return (
-                <button
-                  key={id}
-                  onClick={() => setTone(id)}
-                  className={cn(
-                    "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium",
-                    isSelected && isSuggested
-                      ? "anim-ai-shine"
-                      : isSelected
-                      ? "bg-[var(--accent)] text-[var(--accent-fg)] transition-colors"
-                      : isSuggested
-                      ? "ring-1 ring-violet-500 text-violet-500 bg-transparent transition-colors"
-                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors"
-                  )}
-                >
-                  {isSuggested && <IconSparkle className="h-3 w-3 shrink-0" />}
-                  {label}
-                  {isSuggested && (
-                    <span className={cn(
-                      "rounded px-1 text-[9px] font-bold uppercase tracking-wide",
-                      isSelected ? "bg-white/20 text-white" : "bg-violet-500/20 text-violet-400"
-                    )}>AI</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {suggestedTone && suggestedTone === tone && (
-            <p className="w-full text-[11px] text-violet-400 mt-0.5 flex items-center gap-1">
-              <IconSparkle className="h-3 w-3 shrink-0" />
-              AI picked this tone based on the job description
-            </p>
-          )}
-          {suggestedTone && suggestedTone !== tone && (
-            <p className="w-full text-[11px] text-[var(--muted-fg)] mt-0.5">
-              AI suggests{' '}
+            ].map(({ id, label }) => (
               <button
-                onClick={() => setTone(suggestedTone)}
-                className="text-violet-400 hover:underline font-medium"
+                key={id}
+                onClick={() => setTone(id)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                  tone === id
+                    ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                    : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                )}
               >
-                {suggestedTone.charAt(0).toUpperCase() + suggestedTone.slice(1)}
+                {label}
               </button>
-              {' '}based on the job description
-            </p>
-          )}
+            ))}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
-          <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-              {lang === 'es' ? 'Con' : 'Powered by'}{' '}
-              {modelInfo
-                ? `${friendlyModelName(modelInfo.llm_model)} · ${friendlyModelName(modelInfo.design_model)}`
-                : 'NVIDIA NIM'
-              }
-            </span>
+          <div className="flex flex-1 items-center gap-3 text-[11px] text-[var(--muted-fg)]">
+            {modelInfo ? (
+              <span className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="opacity-50">{lang === 'es' ? 'Redacción' : 'Tailor'}</span>
+                  <span>{shortModelName(modelInfo.llm_model)}</span>
+                </span>
+                <span className="text-[var(--border)]">·</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="opacity-50">{lang === 'es' ? 'Diseño' : 'Design'}</span>
+                  <span>{shortModelName(modelInfo.design_model)}</span>
+                </span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                NVIDIA NIM
+              </span>
+            )}
           </div>
           <Button
             variant="outline"

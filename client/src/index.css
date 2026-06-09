@@ -263,18 +263,6 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 
 .progress-fill { transition: width 220ms cubic-bezier(.22,.61,.36,1); }
 
-/* AI tone shimmer */
-@keyframes ai-shine {
-  0%   { background-position: -300% center; }
-  100% { background-position: 300% center; }
-}
-.anim-ai-shine {
-  background-image: linear-gradient(135deg, #06b6d4 0%, #6366f1 35%, #a855f7 60%, #06b6d4 100%);
-  background-size: 300% auto;
-  animation: ai-shine 2.5s linear infinite;
-  color: white;
-}
-
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
