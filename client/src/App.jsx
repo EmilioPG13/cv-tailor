@@ -948,7 +948,7 @@ function TailorPage({ t, lang, tweaks }) {
     status, streamProgress, result, error,
     styledCV, styleStatus, styleError,
     cvStyle, setCvStyle, cvPreviewImage,
-    tone, setTone,
+    tone, setTone, suggestedTone, detectingTone,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
     handleUpload: ctxHandleUpload,
@@ -964,6 +964,8 @@ function TailorPage({ t, lang, tweaks }) {
   const [scrapeUrl,   setScrapeUrl]   = useState('');
   const [scraping,    setScraping]    = useState(false);
   const [scrapeError, setScrapeError] = useState(null);
+
+  const isLinkedInUrl = /linkedin\.com/i.test(scrapeUrl);
 
   /* Reset tab to bullets whenever a new tailor run starts */
   useEffect(() => {
@@ -1145,10 +1147,20 @@ function TailorPage({ t, lang, tweaks }) {
                   onChange={e => setScrapeUrl(e.target.value)}
                   className="w-full rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-sm text-[var(--fg)] placeholder:text-[var(--muted-fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 />
-                {scrapeError && (
+                {isLinkedInUrl ? (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3 flex flex-col gap-2">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">LinkedIn blocks automated scraping.</p>
+                    <p className="text-[11px] text-amber-600/80 leading-relaxed">
+                      Open the job posting, copy the description text, and paste it here manually.
+                    </p>
+                    <Button variant="outline" size="xs" onClick={() => { setJdMode('text'); setScrapeUrl(''); }} className="self-start">
+                      <IconFile size={11} /> Switch to Text
+                    </Button>
+                  </div>
+                ) : scrapeError && (
                   <p className="text-xs text-red-500">{scrapeError}</p>
                 )}
-                <Button variant="primary" size="sm" disabled={scraping || !scrapeUrl.trim()} onClick={handleScrape}>
+                <Button variant="primary" size="sm" disabled={scraping || !scrapeUrl.trim() || isLinkedInUrl} onClick={handleScrape}>
                   {scraping ? <><Spinner /> Scraping…</> : <><IconGlobe size={12} /> Scrape Job Page</>}
                 </Button>
               </CardContent>
@@ -1193,27 +1205,58 @@ function TailorPage({ t, lang, tweaks }) {
         </div>
         {/* Tone picker */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
+            {detectingTone && (
+              <span className="flex items-center gap-1 text-[11px] text-[var(--muted-fg)]">
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Detecting…
+              </span>
+            )}
             {[
               { id: 'professional',   label: 'Professional' },
               { id: 'conversational', label: 'Conversational' },
               { id: 'enthusiastic',   label: 'Enthusiastic' },
-            ].map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setTone(id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                  tone === id
-                    ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-                    : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
-                )}
-              >
-                {label}
-              </button>
-            ))}
+            ].map(({ id, label }) => {
+              const isSelected  = tone === id;
+              const isSuggested = suggestedTone === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTone(id)}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                    isSelected
+                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                      : isSuggested
+                      ? "ring-1 ring-violet-500 text-violet-500 bg-transparent"
+                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                  )}
+                >
+                  {isSuggested && <IconSparkle className="h-3 w-3 shrink-0" />}
+                  {label}
+                  {isSelected && isSuggested && (
+                    <span className="rounded bg-violet-500/20 px-1 text-[9px] font-bold uppercase tracking-wide text-violet-400">AI</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {suggestedTone && suggestedTone !== tone && (
+            <p className="w-full text-[11px] text-[var(--muted-fg)] mt-0.5">
+              AI suggests{' '}
+              <button
+                onClick={() => setTone(suggestedTone)}
+                className="text-violet-400 hover:underline font-medium"
+              >
+                {suggestedTone.charAt(0).toUpperCase() + suggestedTone.slice(1)}
+              </button>
+              {' '}based on the job description
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
