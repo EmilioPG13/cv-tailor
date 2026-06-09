@@ -326,4 +326,56 @@ router.post('/style', requireAuth(), async (req, res) => {
   }
 });
 
+const VALID_TONES = ['professional', 'conversational', 'enthusiastic'];
+
+router.post('/detect-tone', requireAuth(), async (req, res) => {
+  const { jobDescription, language = 'en' } = req.body;
+  if (!jobDescription) {
+    return res.status(400).json({ error: 'jobDescription is required.' });
+  }
+
+  const settings = await getSettings();
+  const jdSnippet = jobDescription.slice(0, 600);
+  const isEs = language === 'es';
+
+  const system = isEs
+    ? `Analiza la siguiente descripción de trabajo y determina qué tono encaja mejor con la cultura de la empresa.
+Elige exactamente uno:
+- professional: formal, corporativo, finanzas, legal, empresa B2B
+- conversational: amigable, startup, trabajo remoto, enfocado en personas
+- enthusiastic: creativo, marketing, videojuegos, productos de consumo de alta energía
+
+Responde con UNA SOLA PALABRA — sin puntuación, sin explicación.`
+    : `Analyze the following job description and determine which tone best fits the company culture.
+Choose exactly one:
+- professional: formal, corporate, finance, legal, enterprise B2B
+- conversational: friendly, startup, remote-first, people-focused
+- enthusiastic: creative, marketing, gaming, high-energy consumer products
+
+Respond with ONLY one word — no punctuation, no explanation.`;
+
+  const user = isEs
+    ? `DESCRIPCIÓN DEL TRABAJO:\n${jdSnippet}`
+    : `JOB DESCRIPTION:\n${jdSnippet}`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model: settings.llm_model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: user },
+      ],
+      temperature: 0.1,
+      max_tokens: 10,
+    });
+
+    const raw = response.choices[0].message.content.trim().toLowerCase().replace(/[^a-z]/g, '');
+    const tone = VALID_TONES.includes(raw) ? raw : 'professional';
+    res.json({ tone });
+  } catch (error) {
+    console.error('detect-tone error:', error.message);
+    res.status(500).json({ error: 'Failed to detect tone.' });
+  }
+});
+
 export default router;
