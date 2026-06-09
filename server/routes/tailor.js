@@ -41,8 +41,8 @@ const TONE_INSTRUCTIONS = {
 };
 
 const FALLBACK_SETTINGS = {
-  llm_model:        'nvidia/llama-3.1-nemotron-70b-instruct',
-  design_model:     'meta/llama-3.3-70b-instruct',
+  llm_model:        'nvidia/llama-3.3-nemotron-super-49b-v1.5',
+  design_model:     'deepseek-ai/deepseek-v4-flash',
   tailor_prompt_en: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
 Rules:
@@ -195,7 +195,10 @@ STRICT RULES:
 };
 
 const NVIDIA_MODELS_FALLBACK = [
+  'nvidia/llama-3.3-nemotron-super-49b-v1.5',
+  'deepseek-ai/deepseek-v4-flash',
   'nvidia/llama-3.1-nemotron-70b-instruct',
+  'deepseek-ai/deepseek-v4-pro',
   'meta/llama-3.3-70b-instruct',
   'meta/llama-4-maverick-17b-128e-instruct',
   'meta/llama-3.1-70b-instruct',
@@ -203,7 +206,6 @@ const NVIDIA_MODELS_FALLBACK = [
   'mistralai/mistral-large-2-instruct',
   'mistralai/mixtral-8x7b-instruct-v0.1',
   'mistralai/mistral-7b-instruct-v0.3',
-  'deepseek-ai/deepseek-v4-pro',
   'qwen/qwen3.5-397b-a17b',
   'google/gemma-3-12b-it',
   'microsoft/phi-4-mini-instruct',
