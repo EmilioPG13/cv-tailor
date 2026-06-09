@@ -962,6 +962,13 @@ function TailorPage({ t, lang, tweaks }) {
   const [recentHistory, setRecentHistory] = useState([]);
   const [jdMode,      setJdMode]      = useState('text');
   const [scrapeUrl,   setScrapeUrl]   = useState('');
+  const [modelInfo,   setModelInfo]   = useState(null);
+
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_URL}/api/tailor/info`)
+      .then(({ data }) => setModelInfo(data))
+      .catch(() => {});
+  }, []);
   const [scraping,    setScraping]    = useState(false);
   const [scrapeError, setScrapeError] = useState(null);
 
@@ -1228,14 +1235,14 @@ function TailorPage({ t, lang, tweaks }) {
                   key={id}
                   onClick={() => setTone(id)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                    "flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium",
                     isSelected && isSuggested
-                      ? "bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1"
+                      ? "anim-ai-shine"
                       : isSelected
-                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                      ? "bg-[var(--accent)] text-[var(--accent-fg)] transition-colors"
                       : isSuggested
-                      ? "ring-1 ring-violet-500 text-violet-500 bg-transparent"
-                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                      ? "ring-1 ring-violet-500 text-violet-500 bg-transparent transition-colors"
+                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors"
                   )}
                 >
                   {isSuggested && <IconSparkle className="h-3 w-3 shrink-0" />}
@@ -1272,12 +1279,12 @@ function TailorPage({ t, lang, tweaks }) {
         <div className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex flex-1 items-center gap-3 text-[12px] text-[var(--muted-fg)]">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              {t.poweredBy}
-            </span>
-            <span className="hidden sm:inline-block text-[var(--border)]">·</span>
-            <span className="tabular-nums hidden sm:inline">
-              CV {cv.length} · JD {jd.length} {t.chars}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+              {lang === 'es' ? 'Con' : 'Powered by'}{' '}
+              {modelInfo
+                ? `${friendlyModelName(modelInfo.llm_model)} · ${friendlyModelName(modelInfo.design_model)}`
+                : 'NVIDIA NIM'
+              }
             </span>
           </div>
           <Button
