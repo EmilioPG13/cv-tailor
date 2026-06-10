@@ -292,10 +292,16 @@ router.post('/style', requireAuth(), async (req, res) => {
   } else {
     const allowed = ['classic', 'modern', 'creative', 'minimal'];
     const style = allowed.includes(cvStyle) ? cvStyle : 'modern';
-    const templatePath = path.join(__dirname, '..', 'templates', `${style}.html`);
+    const templatesDir = path.join(__dirname, '..', 'templates');
     let template;
     try {
-      template = fs.readFileSync(templatePath, 'utf8');
+      // Each style has multiple variants (style.html, style-2.html, …) — pick one at random
+      const variants = fs.readdirSync(templatesDir)
+        .filter(f => f === `${style}.html` || new RegExp(`^${style}-\\d+\\.html$`).test(f));
+      const pick = variants.length > 0
+        ? variants[Math.floor(Math.random() * variants.length)]
+        : `${style}.html`;
+      template = fs.readFileSync(path.join(templatesDir, pick), 'utf8');
     } catch {
       return res.status(500).json({ error: `Template "${style}" could not be loaded.` });
     }
