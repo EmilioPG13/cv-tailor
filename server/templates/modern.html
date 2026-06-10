@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV</title>
   <style>
-    @page { size: A4; margin: 0; }
+    @page { size: letter; margin: 0; }
     @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -17,38 +17,41 @@
     }
     body {
       font-family: 'Segoe UI', 'Arial', 'Helvetica', sans-serif;
-      font-size: 10pt;
+      font-size: 11pt;
       color: #222;
-      line-height: 1.55;
+      line-height: 1.65;
       background: #fff;
+      min-height: 11in;
+      display: flex;
+      flex-direction: column;
     }
     /* ── Full-bleed header band ── */
     .header {
       background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, #2a5080 100%);
       color: #fff;
-      padding: 26pt 18mm 22pt;
+      padding: 34pt 18mm 28pt;
       border-bottom: 4pt solid var(--accent-bright);
     }
     .name {
-      font-size: 27pt;
+      font-size: 30pt;
       font-weight: 800;
       letter-spacing: -0.5px;
       color: #fff;
     }
     .job-title {
-      font-size: 11pt;
+      font-size: 12pt;
       color: #aecbe8;
-      margin-top: 3pt;
+      margin-top: 4pt;
       font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
     }
     .contact {
       display: flex;
       flex-wrap: wrap;
       gap: 5pt 14pt;
-      margin-top: 11pt;
-      font-size: 8.5pt;
+      margin-top: 13pt;
+      font-size: 9.5pt;
     }
     .contact span {
       background: rgba(255,255,255,0.12);
@@ -58,18 +61,18 @@
       color: #e8f0f8;
     }
     /* ── Content area ── */
-    .content { padding: 16pt 18mm 20pt; }
-    .section { margin-bottom: 15pt; }
+    .content { padding: 22pt 18mm 26pt; flex: 1; }
+    .section { margin-bottom: 20pt; }
     .section-title {
       display: flex;
       align-items: center;
       gap: 6pt;
-      font-size: 9pt;
+      font-size: 10pt;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 2.5px;
       color: var(--accent);
-      margin-bottom: 9pt;
+      margin-bottom: 11pt;
     }
     .section-title::after {
       content: '';
@@ -78,10 +81,10 @@
       background: linear-gradient(to right, var(--accent-bright), var(--accent-light));
       border-radius: 1pt;
     }
-    .summary { font-size: 10pt; color: #3a3f47; line-height: 1.65; }
+    .summary { font-size: 11pt; color: #3a3f47; line-height: 1.7; }
     .entry {
-      margin-bottom: 11pt;
-      padding-left: 12pt;
+      margin-bottom: 15pt;
+      padding-left: 13pt;
       border-left: 3pt solid var(--accent-bright);
       position: relative;
     }
@@ -103,27 +106,27 @@
       align-items: baseline;
       gap: 8pt;
     }
-    .entry-title { font-weight: 700; font-size: 10.5pt; color: var(--accent-dark); }
+    .entry-title { font-weight: 700; font-size: 11.5pt; color: var(--accent-dark); }
     .entry-dates {
-      font-size: 8.5pt;
+      font-size: 9.5pt;
       color: var(--accent);
       white-space: nowrap;
       background: var(--accent-light);
-      border-radius: 8pt;
-      padding: 1pt 8pt;
+      border-radius: 9pt;
+      padding: 1.5pt 9pt;
       font-weight: 600;
     }
-    .entry-subtitle { font-size: 9.5pt; color: var(--muted); margin: 2pt 0 5pt; font-weight: 500; }
-    ul { padding-left: 14pt; }
-    ul li { margin-bottom: 2.5pt; font-size: 9.8pt; color: #333; }
+    .entry-subtitle { font-size: 10.5pt; color: var(--muted); margin: 2pt 0 6pt; font-weight: 500; }
+    ul { padding-left: 15pt; }
+    ul li { margin-bottom: 4pt; font-size: 10.8pt; color: #333; }
     ul li::marker { color: var(--accent-bright); }
-    .skills-grid { display: flex; flex-wrap: wrap; gap: 5pt; }
+    .skills-grid { display: flex; flex-wrap: wrap; gap: 6pt; }
     .skill-tag {
       background: var(--accent);
       color: #fff;
-      padding: 2.5pt 10pt;
-      border-radius: 10pt;
-      font-size: 8.8pt;
+      padding: 3.5pt 12pt;
+      border-radius: 11pt;
+      font-size: 9.8pt;
       font-weight: 600;
     }
   </style>

@@ -171,7 +171,7 @@ REGLAS ESTRICTAS:
 2. Usa ÚNICAMENTE el contenido del TEXTO DEL CV ADAPTADO.
 3. Genera ÚNICAMENTE el documento HTML. Comienza con <!DOCTYPE html> y termina con </html>. Sin markdown, sin bloques de código.
 4. Sin activos externos (sin fuentes CDN, sin imágenes externas). 100% autocontenido.
-5. @page { size: A4; margin: 18mm 16mm; } @media print { body { margin: 0; } }`
+5. @page { size: letter; margin: 18mm 16mm; } @media print { body { margin: 0; } }`
       : `You are an expert CV designer and front-end developer.
 The attached image shows the user's original CV.
 Your task is to create a complete, self-contained HTML document with embedded CSS that faithfully replicates that visual design, using the content from TAILORED CV TEXT.
@@ -181,7 +181,7 @@ STRICT RULES:
 2. Use ONLY the content from TAILORED CV TEXT.
 3. Output ONLY the HTML document. Start with <!DOCTYPE html> and end with </html>. No markdown, no code fences.
 4. No external assets (no CDN fonts, no external images). 100% self-contained.
-5. @page { size: A4; margin: 18mm 16mm; } @media print { body { margin: 0; } }`,
+5. @page { size: letter; margin: 18mm 16mm; } @media print { body { margin: 0; } }`,
     user: isEs
       ? `TEXTO DEL CV ADAPTADO (usa este contenido):\n${tailoredCV}`
       : `TAILORED CV TEXT (use this content):\n${tailoredCV}`
