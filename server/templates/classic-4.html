@@ -8,51 +8,61 @@
     @page { size: letter; margin: 18mm 18mm; }
     @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --charcoal: #2b2f33; --steel: #41698c; --steel-light: #e8eef4; }
     body {
       font-family: 'Georgia', 'Times New Roman', serif;
       font-size: 11.5pt;
-      color: #1a1a1a;
+      color: #26292c;
       line-height: 1.62;
       background: #fff;
     }
     .header {
-      text-align: center;
-      padding-bottom: 14pt;
-      border-bottom: 2.5px solid #1a1a1a;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8pt;
+      padding-bottom: 12pt;
+      border-bottom: 4pt solid var(--charcoal);
       margin-bottom: 18pt;
     }
+    .header-left { flex: 1; min-width: 50%; }
     .name {
       font-family: 'Arial', 'Helvetica', sans-serif;
-      font-size: 27pt;
-      font-weight: bold;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-size: 26pt;
+      font-weight: 800;
+      color: var(--charcoal);
+      line-height: 1.1;
     }
     .job-title {
-      font-size: 12.5pt;
-      color: #555;
-      margin-top: 5pt;
-      font-style: italic;
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      font-size: 11pt;
+      color: var(--steel);
+      margin-top: 4pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
     .contact {
-      font-size: 10pt;
-      color: #555;
-      margin-top: 9pt;
+      font-size: 9.8pt;
+      color: #5d6468;
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 4pt 18pt;
+      flex-direction: column;
+      gap: 2pt;
+      text-align: right;
     }
     .section { margin-bottom: 18pt; }
     .section-title {
       font-family: 'Arial', 'Helvetica', sans-serif;
-      font-size: 11pt;
-      font-weight: bold;
+      font-size: 10.5pt;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      border-bottom: 1px solid #bbb;
-      padding-bottom: 4pt;
-      margin-bottom: 10pt;
+      letter-spacing: 2.5px;
+      color: #fff;
+      background: var(--charcoal);
+      display: inline-block;
+      padding: 2.5pt 12pt;
+      margin-bottom: 11pt;
     }
     .summary { font-size: 11.5pt; line-height: 1.7; }
     .entry { margin-bottom: 14pt; }
@@ -62,25 +72,42 @@
       align-items: baseline;
       gap: 8pt;
     }
-    .entry-title { font-weight: bold; font-size: 12pt; }
-    .entry-dates { font-size: 10.5pt; color: #555; white-space: nowrap; }
-    .entry-subtitle { font-size: 10.5pt; color: #666; font-style: italic; margin-top: 1pt; }
+    .entry-title { font-weight: bold; font-size: 12pt; color: var(--charcoal); }
+    .entry-dates {
+      font-size: 10pt;
+      color: var(--steel);
+      white-space: nowrap;
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      font-weight: 700;
+    }
+    .entry-subtitle { font-size: 10.5pt; color: var(--steel); margin-top: 1pt; }
     ul { margin: 6pt 0 0 17pt; }
     ul li { margin-bottom: 4pt; }
+    ul li::marker { color: var(--steel); }
     .skills-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 5pt 22pt;
-      list-style: disc;
-      padding-left: 17pt;
-      font-size: 11pt;
+      gap: 6pt 8pt;
+      list-style: none;
+      padding: 0;
+    }
+    .skills-list li {
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      font-size: 10pt;
+      background: var(--steel-light);
+      color: var(--steel);
+      font-weight: 700;
+      padding: 2.5pt 10pt;
+      border-left: 3pt solid var(--steel);
     }
   </style>
 </head>
 <body>
   <header class="header">
-    <h1 class="name">{{NAME}}</h1>
-    <p class="job-title">{{JOB_TITLE}}</p>
+    <div class="header-left">
+      <h1 class="name">{{NAME}}</h1>
+      <p class="job-title">{{JOB_TITLE}}</p>
+    </div>
     <div class="contact">
       <span>{{CONTACT_EMAIL}}</span>
       <span>{{CONTACT_PHONE}}</span>
@@ -92,7 +119,7 @@
 
   <!-- Omit this Summary section entirely if the CV has no summary/profile text -->
   <section class="section">
-    <h2 class="section-title">Professional Summary</h2>
+    <h2 class="section-title">Summary</h2>
     <p class="summary">{{PROFILE_SUMMARY}}</p>
   </section>
 

@@ -8,35 +8,48 @@
     @page { size: letter; margin: 18mm 18mm; }
     @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --wine: #6e1f2e; --gold: #b08d3e; }
     body {
       font-family: 'Georgia', 'Times New Roman', serif;
       font-size: 11.5pt;
-      color: #1a1a1a;
+      color: #26221f;
       line-height: 1.62;
       background: #fff;
     }
     .header {
       text-align: center;
       padding-bottom: 14pt;
-      border-bottom: 2.5px solid #1a1a1a;
+      border-bottom: 1px solid var(--gold);
       margin-bottom: 18pt;
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80pt;
+      height: 5px;
+      background: var(--wine);
     }
     .name {
-      font-family: 'Arial', 'Helvetica', sans-serif;
-      font-size: 27pt;
-      font-weight: bold;
-      letter-spacing: 2px;
+      font-size: 28pt;
+      font-weight: normal;
+      color: var(--wine);
+      letter-spacing: 3px;
       text-transform: uppercase;
     }
     .job-title {
-      font-size: 12.5pt;
-      color: #555;
+      font-size: 11.5pt;
+      color: #7a6f66;
       margin-top: 5pt;
-      font-style: italic;
+      letter-spacing: 4px;
+      text-transform: uppercase;
     }
     .contact {
       font-size: 10pt;
-      color: #555;
+      color: #7a6f66;
       margin-top: 9pt;
       display: flex;
       justify-content: center;
@@ -45,16 +58,24 @@
     }
     .section { margin-bottom: 18pt; }
     .section-title {
-      font-family: 'Arial', 'Helvetica', sans-serif;
-      font-size: 11pt;
+      font-size: 12pt;
       font-weight: bold;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      border-bottom: 1px solid #bbb;
-      padding-bottom: 4pt;
-      margin-bottom: 10pt;
+      color: var(--wine);
+      text-align: center;
+      margin-bottom: 11pt;
+      position: relative;
     }
-    .summary { font-size: 11.5pt; line-height: 1.7; }
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 36pt;
+      height: 1.5pt;
+      background: var(--gold);
+      margin: 4pt auto 0;
+    }
+    .summary { font-size: 11.5pt; line-height: 1.7; text-align: center; max-width: 90%; margin: 0 auto; }
     .entry { margin-bottom: 14pt; }
     .entry-header {
       display: flex;
@@ -63,18 +84,21 @@
       gap: 8pt;
     }
     .entry-title { font-weight: bold; font-size: 12pt; }
-    .entry-dates { font-size: 10.5pt; color: #555; white-space: nowrap; }
-    .entry-subtitle { font-size: 10.5pt; color: #666; font-style: italic; margin-top: 1pt; }
+    .entry-dates { font-size: 10.5pt; color: var(--gold); white-space: nowrap; font-style: italic; }
+    .entry-subtitle { font-size: 10.5pt; color: #7a6f66; font-style: italic; margin-top: 1pt; }
     ul { margin: 6pt 0 0 17pt; }
     ul li { margin-bottom: 4pt; }
+    ul li::marker { color: var(--gold); }
     .skills-list {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 5pt 22pt;
-      list-style: disc;
-      padding-left: 17pt;
+      list-style: none;
       font-size: 11pt;
     }
+    .skills-list li::after { content: ' ·'; color: var(--gold); }
+    .skills-list li:last-child::after { content: ''; }
   </style>
 </head>
 <body>
@@ -92,7 +116,7 @@
 
   <!-- Omit this Summary section entirely if the CV has no summary/profile text -->
   <section class="section">
-    <h2 class="section-title">Professional Summary</h2>
+    <h2 class="section-title">Profile</h2>
     <p class="summary">{{PROFILE_SUMMARY}}</p>
   </section>
 

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV</title>
+  <style>
+    @page { size: letter; margin: 0; }
+    @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #0f766e;
+      --accent-dark: #0b4f4a;
+      --accent-bright: #14b8a6;
+      --accent-light: #d9f2ef;
+      --muted: #6b7280;
+    }
+    body {
+      font-family: 'Segoe UI', 'Arial', 'Helvetica', sans-serif;
+      font-size: 11pt;
+      color: #222;
+      line-height: 1.65;
+      background: #fff;
+      min-height: 11in;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── Full-bleed header band ── */
+    .header {
+      background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, #129286 100%);
+      color: #fff;
+      padding: 34pt 18mm 28pt;
+      border-bottom: 4pt solid var(--accent-bright);
+    }
+    .name {
+      font-size: 30pt;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .job-title {
+      font-size: 12pt;
+      color: #99e3da;
+      margin-top: 4pt;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+    }
+    .contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5pt 14pt;
+      margin-top: 13pt;
+      font-size: 9.5pt;
+    }
+    .contact span {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 10pt;
+      padding: 2pt 9pt;
+      color: #e6f7f4;
+    }
+    /* ── Content area ── */
+    .content { padding: 22pt 18mm 26pt; flex: 1; }
+    .section { margin-bottom: 20pt; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 6pt;
+      font-size: 10pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--accent);
+      margin-bottom: 11pt;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2pt;
+      background: linear-gradient(to right, var(--accent-bright), var(--accent-light));
+      border-radius: 1pt;
+    }
+    .summary { font-size: 11pt; color: #3a3f47; line-height: 1.7; }
+    .entry {
+      margin-bottom: 15pt;
+      padding-left: 13pt;
+      border-left: 3pt solid var(--accent-bright);
+      position: relative;
+    }
+    .entry::before {
+      content: '';
+      position: absolute;
+      left: -5pt;
+      top: 4pt;
+      width: 7pt;
+      height: 7pt;
+      border-radius: 50%;
+      background: var(--accent-bright);
+      border: 1.5pt solid #fff;
+      box-shadow: 0 0 0 1.5pt var(--accent-bright);
+    }
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8pt;
+    }
+    .entry-title { font-weight: 700; font-size: 11.5pt; color: var(--accent-dark); }
+    .entry-dates {
+      font-size: 9.5pt;
+      color: var(--accent);
+      white-space: nowrap;
+      background: var(--accent-light);
+      border-radius: 9pt;
+      padding: 1.5pt 9pt;
+      font-weight: 600;
+    }
+    .entry-subtitle { font-size: 10.5pt; color: var(--muted); margin: 2pt 0 6pt; font-weight: 500; }
+    ul { padding-left: 15pt; }
+    ul li { margin-bottom: 4pt; font-size: 10.8pt; color: #333; }
+    ul li::marker { color: var(--accent-bright); }
+    .skills-grid { display: flex; flex-wrap: wrap; gap: 6pt; }
+    .skill-tag {
+      background: var(--accent);
+      color: #fff;
+      padding: 3.5pt 12pt;
+      border-radius: 11pt;
+      font-size: 9.8pt;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1 class="name">{{NAME}}</h1>
+    <p class="job-title">{{JOB_TITLE}}</p>
+    <div class="contact">
+      <span>{{CONTACT_EMAIL}}</span>
+      <span>{{CONTACT_PHONE}}</span>
+      <span>{{CONTACT_LOCATION}}</span>
+      <span>{{CONTACT_LINKEDIN}}</span>
+      <!-- Include <span>{{CONTACT_GITHUB}}</span> if GitHub is present in the CV -->
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Omit this Summary section entirely if the CV has no summary/profile text -->
+    <section class="section">
+      <h2 class="section-title">Summary</h2>
+      <p class="summary">{{PROFILE_SUMMARY}}</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Experience</h2>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">{{JOB_TITLE_1}}</span>
+          <span class="entry-dates">{{DATES_1}}</span>
+        </div>
+        <div class="entry-subtitle">{{COMPANY_LOCATION_1}}</div>
+        <ul>
+          <li>{{BULLET_1_1}}</li>
+          <li>{{BULLET_1_2}}</li>
+          <!-- Add more <li> bullets as needed from the CV -->
+        </ul>
+      </div>
+      <!-- REPEAT THIS PATTERN FOR EACH ADDITIONAL JOB FROM THE CV -->
+
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Education</h2>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">{{EDU_DEGREE_1}}</span>
+          <span class="entry-dates">{{EDU_DATES_1}}</span>
+        </div>
+        <div class="entry-subtitle">{{EDU_INSTITUTION_1}}</div>
+      </div>
+      <!-- REPEAT THIS PATTERN FOR EACH ADDITIONAL EDUCATION ENTRY FROM THE CV -->
+    </section>
+
+    <!-- OPTIONAL: Use this section pattern for Projects, Certifications, Languages, or any other CV section. Repeat the whole section per extra CV section; omit entirely if none exist. -->
+    <section class="section">
+      <h2 class="section-title">{{OPTIONAL_SECTION_TITLE}}</h2>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="entry-title">{{OPTIONAL_ENTRY_TITLE_1}}</span>
+          <span class="entry-dates">{{OPTIONAL_ENTRY_DATES_1}}</span>
+        </div>
+        <div class="entry-subtitle">{{OPTIONAL_ENTRY_SUBTITLE_1}}</div>
+        <ul>
+          <li>{{OPTIONAL_BULLET_1_1}}</li>
+          <!-- Add more <li> bullets as needed; omit the <ul> if the entry has none -->
+        </ul>
+      </div>
+      <!-- REPEAT THE ENTRY PATTERN FOR EACH ITEM IN THIS SECTION -->
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-grid">
+        <span class="skill-tag">{{SKILL_1}}</span>
+        <!-- REPEAT <span class="skill-tag">Skill Name</span> FOR EACH SKILL FROM THE CV -->
+      </div>
+    </section>
+  </div>
+</body>
+</html>
