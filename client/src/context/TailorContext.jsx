@@ -108,7 +108,6 @@ export function TailorProvider({ lang, t, children }) {
     setCv(''); setJd(''); setResult(null); setStatus('idle');
     setError(null); setStyledCV(null); setStyleStatus('idle');
     setStyleError(null); setCvPreviewImage(null);
-    setCvStyle(s => (s === 'original' ? 'modern' : s));
   }, []);
 
   const handleLoadSample = useCallback(() => {
@@ -168,13 +167,7 @@ export function TailorProvider({ lang, t, children }) {
       getToken().then(tok =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          {
-            tailoredCV: parsed.tailoredCV,
-            language: lang,
-            cvStyle: cvStyle === 'original' ? 'modern' : cvStyle,
-            // Vision-based design replication only when the user explicitly picks "My design"
-            cvPreviewImage: cvStyle === 'original' ? cvPreviewImage : null,
-          },
+          { tailoredCV: parsed.tailoredCV, language: lang, cvStyle },
           { headers: { Authorization: `Bearer ${tok}` } }
         )
       ).then(({ data: sd }) => {
@@ -204,7 +197,7 @@ export function TailorProvider({ lang, t, children }) {
       setStatus('idle');
       setStreamProgress(0);
     }
-  }, [cv, jd, tone, cvStyle, cvPreviewImage, getToken]);
+  }, [cv, jd, tone, cvStyle, getToken]);
 
   return (
     <TailorContext.Provider value={{
