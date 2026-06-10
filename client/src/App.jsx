@@ -1107,6 +1107,9 @@ function TailorPage({ t, lang, tweaks }) {
     { id: 'modern',   label: 'Modern',   desc: 'Polished accent color' },
     { id: 'creative', label: 'Creative', desc: 'Bold sidebar design' },
     { id: 'minimal',  label: 'Minimal',  desc: 'Executive whitespace' },
+    ...(cvPreviewImage
+      ? [{ id: 'original', label: 'My design', desc: 'Replicate your uploaded CV layout (experimental)' }]
+      : []),
   ];
 
   /* ── UploadBtn ── */
@@ -1242,25 +1245,21 @@ function TailorPage({ t, lang, tweaks }) {
         <div className="px-4 pt-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] text-[var(--muted-fg)] mr-1">Style:</span>
-            {cvPreviewImage ? (
-              <span className="text-[11px] text-[var(--muted-fg)] italic">Using your uploaded CV design</span>
-            ) : (
-              STYLE_OPTIONS.map(({ id, label, desc }) => (
-                <button
-                  key={id}
-                  onClick={() => setCvStyle(id)}
-                  title={desc}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                    cvStyle === id
-                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
-                  )}
-                >
-                  {label}
-                </button>
-              ))
-            )}
+            {STYLE_OPTIONS.map(({ id, label, desc }) => (
+              <button
+                key={id}
+                onClick={() => setCvStyle(id)}
+                title={desc}
+                className={cn(
+                  "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                  cvStyle === id
+                    ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                    : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                )}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
         {/* Tone picker */}
