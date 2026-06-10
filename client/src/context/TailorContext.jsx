@@ -69,8 +69,39 @@ export function TailorProvider({ lang, t, children }) {
   const [cvStyle,        setCvStyle]        = useState('modern');
   const [cvPreviewImage, setCvPreviewImage] = useState(null);
   const [tone,           setTone]           = useState('professional');
+  const [suggestedTone,  setSuggestedTone]  = useState(null);
+  const [detectingTone,  setDetectingTone]  = useState(false);
   // Incrementing this triggers TailorPage's history sidebar to refetch
   const [historyVersion, setHistoryVersion] = useState(0);
+
+  // ── AI tone detection: debounced watcher on the job description ─
+  useEffect(() => {
+    if (jd.trim().length < 80) {
+      setSuggestedTone(null);
+      setDetectingTone(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setDetectingTone(true);
+      try {
+        const token = await getToken();
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/tailor/detect-tone`,
+          { jobDescription: jd, language: langRef.current },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (data?.tone) {
+          setSuggestedTone(data.tone);
+          setTone(data.tone);
+        }
+      } catch {
+        // Non-blocking: silently keep the current tone on failure
+      } finally {
+        setDetectingTone(false);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [jd, getToken]);
 
   // ── Handlers ───────────────────────────────────────────────────
   const handleClear = useCallback(() => {
@@ -174,7 +205,7 @@ export function TailorProvider({ lang, t, children }) {
       status, streamProgress, result,
       error, styledCV, styleStatus, styleError,
       cvStyle, setCvStyle, cvPreviewImage, setCvPreviewImage,
-      tone, setTone,
+      tone, setTone, suggestedTone, detectingTone,
       historyVersion,
       handleClear, handleLoadSample, handleUpload, runTailor,
     }}>

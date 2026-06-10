@@ -78,19 +78,20 @@
 </head>
 <body>
   <header class="header">
-    <h1 class="name">Jane Doe</h1>
-    <p class="job-title">Senior Software Engineer</p>
+    <h1 class="name">{{NAME}}</h1>
+    <p class="job-title">{{JOB_TITLE}}</p>
     <div class="contact">
-      <span>jane.doe@email.com</span>
-      <span>(555) 123-4567</span>
-      <span>New York, NY</span>
-      <span>linkedin.com/in/janedoe</span>
+      <span>{{CONTACT_EMAIL}}</span>
+      <span>{{CONTACT_PHONE}}</span>
+      <span>{{CONTACT_LOCATION}}</span>
+      <span>{{CONTACT_LINKEDIN}}</span>
+      <!-- Include <span>{{CONTACT_GITHUB}}</span> if GitHub is present in the CV -->
     </div>
   </header>
 
   <section class="section">
     <h2 class="section-title">Summary</h2>
-    <p class="summary">Results-driven software engineer with 8+ years of experience building scalable systems and leading engineering teams. Deep expertise in cloud architecture and full-stack development with a focus on reliability and performance.</p>
+    <p class="summary">{{PROFILE_SUMMARY}}</p>
   </section>
 
   <section class="section">
@@ -98,51 +99,37 @@
 
     <div class="entry">
       <div class="entry-header">
-        <span class="entry-title">Senior Software Engineer</span>
-        <span class="entry-dates">2020 – Present</span>
+        <span class="entry-title">{{JOB_TITLE_1}}</span>
+        <span class="entry-dates">{{DATES_1}}</span>
       </div>
-      <div class="entry-subtitle">Acme Corporation, New York, NY</div>
+      <div class="entry-subtitle">{{COMPANY_LOCATION_1}}</div>
       <ul>
-        <li>Led microservices migration reducing system latency by 40%.</li>
-        <li>Designed real-time event pipeline processing 2M+ daily events.</li>
-        <li>Mentored 4 junior engineers; established team code review cadence.</li>
+        <li>{{BULLET_1_1}}</li>
+        <li>{{BULLET_1_2}}</li>
+        <!-- Add more <li> bullets as needed from the CV -->
       </ul>
     </div>
+    <!-- REPEAT THIS PATTERN FOR EACH ADDITIONAL JOB FROM THE CV -->
 
-    <div class="entry">
-      <div class="entry-header">
-        <span class="entry-title">Software Engineer</span>
-        <span class="entry-dates">2017 – 2019</span>
-      </div>
-      <div class="entry-subtitle">Tech Startup Inc., San Francisco, CA</div>
-      <ul>
-        <li>Built REST APIs serving 500K daily active users at 99.9% uptime.</li>
-        <li>Implemented CI/CD pipelines reducing deployment time by 60%.</li>
-      </ul>
-    </div>
   </section>
 
   <section class="section">
     <h2 class="section-title">Education</h2>
     <div class="entry">
       <div class="entry-header">
-        <span class="entry-title">B.S. Computer Science</span>
-        <span class="entry-dates">2013 – 2017</span>
+        <span class="entry-title">{{EDU_DEGREE_1}}</span>
+        <span class="entry-dates">{{EDU_DATES_1}}</span>
       </div>
-      <div class="entry-subtitle">University of California, Berkeley</div>
+      <div class="entry-subtitle">{{EDU_INSTITUTION_1}}</div>
     </div>
+    <!-- REPEAT THIS PATTERN FOR EACH ADDITIONAL EDUCATION ENTRY FROM THE CV -->
   </section>
 
   <section class="section">
     <h2 class="section-title">Skills</h2>
     <ul class="skills-row">
-      <li>JavaScript / TypeScript</li>
-      <li>Python</li>
-      <li>React</li>
-      <li>Node.js</li>
-      <li>PostgreSQL</li>
-      <li>AWS</li>
-      <li>Docker</li>
+      <li>{{SKILL_1}}</li>
+      <!-- REPEAT <li>Skill Name</li> FOR EACH SKILL FROM THE CV -->
     </ul>
   </section>
 </body>
