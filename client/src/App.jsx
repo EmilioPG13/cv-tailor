@@ -29,6 +29,12 @@ const PALETTES = [
   { id: "forest",   name: "Mint",    swatches: ["#6ee7b7", "#a7f3d0", "#bae6fd"] },
 ];
 
+const TONE_OPTIONS = [
+  { id: 'professional',   label: 'Professional' },
+  { id: 'conversational', label: 'Conversational' },
+  { id: 'enthusiastic',   label: 'Enthusiastic' },
+];
+
 function parseApiResult(text, lang) {
   const cvIdx   = text.search(/^(?:[\d.]+\s*)?(TAILORED\s+CV|CV\s+ADAPTADO|CV\s+BULLETS?)\s*$/im);
   const coverIdx = text.search(/^(?:[\d.]+\s*)?(COVER\s+LETTER|CARTA\s+DE\s+PRESENTACI[ÓO]N)\s*$/im);
@@ -485,24 +491,51 @@ function StreamingView({ t, progress }) {
 }
 
 /* ─────────────────────────────────────────────
+   TabHelp — dismissible per-tab help banner
+───────────────────────────────────────────── */
+
+function TabHelp({ tabKey, text }) {
+  const storageKey = `tabhelp-dismissed-${tabKey}`;
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  const dismiss = () => {
+    setDismissed(true);
+    try { localStorage.setItem(storageKey, '1'); } catch {}
+  };
+
+  return (
+    <div className="flex items-start gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-3 py-2.5 anim-fade">
+      <span className="text-[var(--muted-fg)] mt-0.5 shrink-0"><IconSparkle size={12} /></span>
+      <p className="flex-1 text-[11.5px] leading-relaxed text-[var(--muted-fg)]">{text}</p>
+      <button
+        onClick={dismiss}
+        className="shrink-0 text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors text-[14px] leading-none mt-0.5"
+        aria-label="Dismiss"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    BulletItem
 ───────────────────────────────────────────── */
 
-function BulletItem({ bullet, t, onCopy, copied }) {
+function BulletItem({ bullet, index, t, onCopy, copied }) {
   const [expanded, setExpanded] = useState(false);
   const key = `bullet-${bullet.text.slice(0, 20)}`;
 
   return (
     <li className="anim-bullet group flex gap-3 rounded-xl border border-[var(--border)] bg-[var(--muted)]/40 px-4 py-3 text-sm leading-relaxed">
+      <span className="shrink-0 mt-px text-[11px] font-semibold tabular-nums text-[var(--muted-fg)] w-5 text-right">
+        {index + 1}.
+      </span>
       <div className="flex flex-col gap-2 flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant={bullet.tag === "REWRITTEN" ? "accent" : "secondary"}>
-            {bullet.tag === "REWRITTEN" ? t.rewritten : t.kept}
-          </Badge>
-          {bullet.match.map((kw, i) => (
-            <Badge key={i} variant="outline" className="text-[9px]">{kw}</Badge>
-          ))}
-        </div>
         <p className="text-[13px] text-[var(--fg)]">{bullet.text}</p>
         {bullet.original && (
           <button
@@ -539,10 +572,18 @@ function BulletsView({ t, result, copy, copied }) {
 
   return (
     <div className="flex flex-col gap-4 anim-fade">
-      {/* Keyword chips + copy-all */}
+      <TabHelp tabKey="bullets" text={t.helpBullets} />
+
+      {/* Section header + copy-all */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+          <span className="text-[13px] font-semibold text-[var(--fg)]">
+            {t.bullets} ({result.bullets.length})
+          </span>
+          <span className="text-[10.5px] text-[var(--muted-fg)]">{t.bulletsSubLabel}</span>
+        </div>
         {result.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 flex-1">
+          <div className="flex flex-wrap gap-1.5">
             <span className="text-[10.5px] text-[var(--muted-fg)] mr-1">{t.matchedKeywords}:</span>
             {result.keywords.map((kw, i) => (
               <Badge key={i} variant="accent">{kw}</Badge>
@@ -566,6 +607,7 @@ function BulletsView({ t, result, copy, copied }) {
           <BulletItem
             key={i}
             bullet={bullet}
+            index={i}
             t={t}
             onCopy={copy}
             copied={copied}
@@ -586,6 +628,7 @@ function CoverView({ t, result, copy, copied, dl }) {
 
   return (
     <div className="flex flex-col gap-4 anim-fade">
+      <TabHelp tabKey="cover" text={t.helpCover} />
       <div className="flex items-center gap-3">
         <span className="text-[11px] text-[var(--muted-fg)] tabular-nums">{wordCount} words</span>
         <div className="flex-1" />
@@ -615,6 +658,7 @@ function RawView({ t, result, copy, copied, dl }) {
 
   return (
     <div className="flex flex-col gap-4 anim-fade">
+      <TabHelp tabKey="raw" text={t.helpRaw} />
       <div className="flex items-center gap-3">
         <span className="text-[11px] text-[var(--muted-fg)] tabular-nums">{raw.length} {t.chars}</span>
         <div className="flex-1" />
@@ -665,15 +709,19 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
 
   return (
     <div className="flex flex-col gap-3 anim-fade">
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="xs"
-          onClick={() => dl('tailored-cv.html', styledCV, 'text/html')}>
-          <IconDownload size={12} /> {t.downloadHtml}
-        </Button>
-        <Button variant="ghost" size="xs"
-          onClick={() => iframeRef.current?.contentWindow?.print()}>
-          <IconFile size={12} /> {t.printPdf}
-        </Button>
+      <TabHelp tabKey="design" text={t.helpDesign} />
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" size="xs"
+            onClick={() => dl('tailored-cv.html', styledCV, 'text/html')}>
+            <IconDownload size={12} /> {t.downloadHtml}
+          </Button>
+          <Button variant="ghost" size="xs"
+            onClick={() => iframeRef.current?.contentWindow?.print()}>
+            <IconFile size={12} /> {t.printPdf}
+          </Button>
+        </div>
+        <p className="text-[10px] text-[var(--muted-fg)] opacity-70">{t.printPdfHint}</p>
       </div>
       <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-white" style={{ height: '700px' }}>
         <iframe
@@ -953,7 +1001,7 @@ function TailorPage({ t, lang, tweaks }) {
     status, streamProgress, result, error,
     styledCV, styleStatus, styleError,
     cvStyle, setCvStyle, cvPreviewImage,
-    tone, setTone,
+    tone, setTone, suggestedTone, detectingTone,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
     handleUpload: ctxHandleUpload,
@@ -1216,28 +1264,51 @@ function TailorPage({ t, lang, tweaks }) {
           </div>
         </div>
         {/* Tone picker */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3 pb-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1.5 px-4 pt-3 pb-3 border-b border-[var(--border)]">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] text-[var(--muted-fg)] mr-1">Tone:</span>
-            {[
-              { id: 'professional',   label: 'Professional' },
-              { id: 'conversational', label: 'Conversational' },
-              { id: 'enthusiastic',   label: 'Enthusiastic' },
-            ].map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setTone(id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                  tone === id
-                    ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-                    : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
-                )}
-              >
-                {label}
-              </button>
-            ))}
+            {TONE_OPTIONS.map(({ id, label }) => {
+              const isSelected  = tone === id;
+              const isSuggested = suggestedTone === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTone(id)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[11px] font-medium transition-colors inline-flex items-center gap-1",
+                    isSelected
+                      ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                      : isSuggested
+                      ? "bg-[var(--muted)] text-violet-600 dark:text-violet-400 ring-1 ring-violet-400/60"
+                      : "bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]"
+                  )}
+                >
+                  {isSuggested && <IconSparkle size={10} />}
+                  {label}
+                  {isSelected && isSuggested && (
+                    <span className="rounded-sm bg-white/20 px-1 text-[8px] font-bold tracking-wide">AI</span>
+                  )}
+                </button>
+              );
+            })}
+            {detectingTone && (
+              <span className="flex items-center gap-1.5 text-[11px] text-[var(--muted-fg)]">
+                <Spinner /> {t.detectingTone}
+              </span>
+            )}
           </div>
+          {suggestedTone && suggestedTone !== tone && (
+            <p className="text-[10.5px] text-[var(--muted-fg)]">
+              {t.aiSuggests}{' '}
+              <button
+                onClick={() => setTone(suggestedTone)}
+                className="font-medium text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                {TONE_OPTIONS.find(o => o.id === suggestedTone)?.label}
+              </button>{' '}
+              {t.aiSuggestsBasis}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3 p-4">
           <div className="flex flex-1 items-center gap-3 text-[11px] text-[var(--muted-fg)]">

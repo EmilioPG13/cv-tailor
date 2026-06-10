@@ -75,38 +75,32 @@ CV ADAPTADO
 
 CARTA DE PRESENTACIÓN
 [carta de presentación aquí]`,
-  style_prompt_en: `You are an expert HTML/CSS developer and CV designer.
-You receive three inputs:
-1. CSS STYLES — the complete stylesheet that defines the visual identity (colors, layout, typography, spacing).
-2. HTML SKELETON — the HTML structure showing element types and class names, without real content.
-3. TAILORED CV TEXT — the candidate's information to place into the document.
+  style_prompt_en: `You are a precise HTML templating engine.
+You receive a complete HTML CV template with {{PLACEHOLDER}} markers and a TAILORED CV TEXT.
 
-YOUR TASK: Produce a complete, self-contained HTML document that:
-- Embeds the CSS STYLES block verbatim inside a <style> tag in <head> — do not alter any rule.
-- Replicates the HTML SKELETON exactly: same elements, same class names, same nesting hierarchy.
-- Fills each element with the matching content from TAILORED CV TEXT.
-- Adjusts repeating blocks (jobs, education items, skills) to match the actual CV data, always using the same HTML pattern shown in the skeleton.
+YOUR TASK: Replace every {{PLACEHOLDER}} with the matching content from the CV text.
+For repeating blocks (experience, education, projects, skills), copy the provided HTML pattern for each entry found in the CV, following the HTML comments in the template.
+If the CV has no content for an optional section (marked as such in the comments), omit that section entirely.
+Remove all HTML comments from the final output.
 
 STRICT RULES:
-1. Do NOT invent new CSS classes, IDs, or inline styles beyond what the skeleton shows.
-2. Do NOT modify the CSS.
-3. Output ONLY the HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown, no code fences, no commentary.`,
-  style_prompt_es: `Eres un experto en HTML/CSS y diseño de CVs.
-Recibes tres entradas:
-1. ESTILOS CSS — la hoja de estilos completa que define la identidad visual (colores, maquetación, tipografía, espaciado).
-2. ESQUELETO HTML — la estructura HTML con tipos de elemento y nombres de clase, sin contenido real.
-3. TEXTO DEL CV ADAPTADO — la información del candidato que debes insertar en el documento.
+1. Do NOT change any CSS, class names, HTML structure, or attributes.
+2. Do NOT add new CSS, inline styles, or new elements beyond repeating the given patterns.
+3. Output ONLY the completed HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown, no code fences, no commentary.
+4. Use proper Unicode characters directly — output á, é, ñ, ·, – as-is. Do NOT use Latin-1 escapes or HTML entities for accented characters.`,
+  style_prompt_es: `Eres un motor de plantillas HTML preciso.
+Recibes una plantilla HTML completa de CV con marcadores {{PLACEHOLDER}} y un TEXTO DEL CV ADAPTADO.
 
-TU TAREA: Generar un documento HTML completo y autocontenido que:
-- Embeba el bloque ESTILOS CSS tal cual dentro de una etiqueta <style> en <head> — sin alterar ninguna regla.
-- Replique el ESQUELETO HTML exactamente: mismos elementos, mismos nombres de clase, misma jerarquía de anidamiento.
-- Rellene cada elemento con el contenido correspondiente del TEXTO DEL CV ADAPTADO.
-- Ajuste los bloques repetidos (empleos, estudios, habilidades) para coincidir con el CV real, usando siempre el mismo patrón HTML del esqueleto.
+TU TAREA: Reemplaza cada {{PLACEHOLDER}} con el contenido correspondiente del texto del CV.
+Para bloques repetidos (experiencia, educación, proyectos, habilidades), copia el patrón HTML proporcionado para cada entrada del CV, siguiendo los comentarios HTML de la plantilla.
+Si el CV no tiene contenido para una sección opcional (marcada como tal en los comentarios), omite esa sección por completo.
+Elimina todos los comentarios HTML del resultado final.
 
 REGLAS ESTRICTAS:
-1. NO inventes nuevas clases CSS, IDs ni estilos en línea más allá de lo que muestra el esqueleto.
-2. NO modifiques el CSS.
-3. Genera ÚNICAMENTE el documento HTML, comenzando con <!DOCTYPE html> y terminando con </html>. Sin markdown, sin bloques de código, sin comentarios.`,
+1. NO cambies ningún CSS, nombre de clase, estructura HTML ni atributos.
+2. NO añadas CSS nuevo, estilos en línea ni elementos nuevos más allá de repetir los patrones dados.
+3. Genera ÚNICAMENTE el documento HTML completado, comenzando con <!DOCTYPE html> y terminando con </html>. Sin markdown, sin bloques de código, sin comentarios.
+4. Usa caracteres Unicode correctos directamente — escribe á, é, ñ, ·, – tal cual. NO uses escapes Latin-1 ni entidades HTML para caracteres acentuados.`,
 };
 
 const SETTINGS_TTL_MS = 5 * 60 * 1000;
@@ -142,27 +136,27 @@ const buildPrompt = (cv, jobDescription, language, tone, settings) => {
   return { system, user };
 };
 
-function extractCssAndSkeleton(html) {
-  const cssMatch = html.match(/<style[^>]*>[\s\S]*?<\/style>/i);
-  const css = cssMatch ? cssMatch[0] : '';
-  const bodyMatch = html.match(/<body[^>]*>[\s\S]*?<\/body>/i);
-  if (!bodyMatch) return { css, skeleton: '<body></body>' };
-  // Replace non-whitespace text nodes with '…' to strip sample content while preserving structure
-  const skeleton = bodyMatch[0].replace(/(?<=>)([^<]+)(?=<)/g, (_, text) =>
-    text.trim() ? '…' : text
-  );
-  return { css, skeleton };
-}
-
 const buildTemplateStylePrompt = (template, tailoredCV, language, settings) => {
   const isEs = language === 'es';
-  const { css, skeleton } = extractCssAndSkeleton(template);
   const system = isEs ? settings.style_prompt_es : settings.style_prompt_en;
   const user = isEs
-    ? `ESTILOS CSS:\n${css}\n\nESQUELETO HTML:\n${skeleton}\n\nTEXTO DEL CV ADAPTADO:\n${tailoredCV}`
-    : `CSS STYLES:\n${css}\n\nHTML SKELETON:\n${skeleton}\n\nTAILORED CV TEXT:\n${tailoredCV}`;
+    ? `PLANTILLA HTML:\n${template}\n\nTEXTO DEL CV ADAPTADO:\n${tailoredCV}`
+    : `HTML TEMPLATE:\n${template}\n\nTAILORED CV TEXT:\n${tailoredCV}`;
   return { system, user };
 };
+
+// Fix common double-encoded UTF-8 artifacts the LLM sometimes emits
+function fixEncodingArtifacts(html) {
+  return html
+    .replace(/Ã¡/g, 'á').replace(/Ã©/g, 'é').replace(/Ã­/g, 'í')
+    .replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú').replace(/Ã±/g, 'ñ')
+    .replace(/Ã‰/g, 'É').replace(/Ã“/g, 'Ó').replace(/Ãš/g, 'Ú')
+    .replace(/Ã‘/g, 'Ñ')
+    .replace(/â€¢/g, '•').replace(/â€“/g, '–').replace(/â€”/g, '—')
+    .replace(/â€™/g, '’').replace(/â€˜/g, '‘')
+    .replace(/â€œ/g, '“').replace(/â€/g, '”')
+    .replace(/Â·/g, '·').replace(/Â /g, ' ');
+}
 
 const buildVisionStylePrompt = (tailoredCV, language) => {
   const isEs = language === 'es';
@@ -322,6 +316,7 @@ router.post('/style', requireAuth(), async (req, res) => {
 
     let html = response.choices[0].message.content.trim();
     html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
+    html = fixEncodingArtifacts(html);
     if (!html.toLowerCase().startsWith('<!doctype')) {
       const idx = html.toLowerCase().indexOf('<!doctype');
       if (idx > -1) html = html.slice(idx);
@@ -335,5 +330,57 @@ router.post('/style', requireAuth(), async (req, res) => {
   }
 });
 
+const VALID_TONES = ['professional', 'conversational', 'enthusiastic'];
+
+router.post('/detect-tone', requireAuth(), async (req, res) => {
+  const { jobDescription, language = 'en' } = req.body;
+
+  if (!jobDescription || typeof jobDescription !== 'string') {
+    return res.status(400).json({ error: 'jobDescription is required.' });
+  }
+
+  const snippet = jobDescription.slice(0, 600);
+  const prompt = language === 'es'
+    ? `Analiza la siguiente descripción de trabajo y determina qué tono encaja mejor con la cultura de la empresa.
+Elige exactamente uno:
+- professional: formal, corporativo, finanzas, legal, B2B empresarial
+- conversational: cercano, startup, remote-first, centrado en las personas
+- enthusiastic: creativo, marketing, gaming, productos de consumo de alta energía
+
+Responde con UNA SOLA palabra en inglés — sin puntuación, sin explicación.
+
+DESCRIPCIÓN DEL TRABAJO:
+${snippet}`
+    : `Analyze the following job description and determine which tone best fits the company culture.
+Choose exactly one:
+- professional: formal, corporate, finance, legal, enterprise B2B
+- conversational: friendly, startup, remote-first, people-focused
+- enthusiastic: creative, marketing, gaming, high-energy consumer products
+
+Respond with ONLY one word — no punctuation, no explanation.
+
+JOB DESCRIPTION:
+${snippet}`;
+
+  try {
+    const settings = await getSettings();
+    const response = await client.chat.completions.create({
+      model: settings.llm_model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      max_tokens: 10,
+    });
+
+    const raw = (response.choices[0].message.content || '').trim().toLowerCase();
+    const tone = VALID_TONES.find(v => raw.includes(v));
+    if (!tone) {
+      return res.status(422).json({ error: 'Could not determine tone.' });
+    }
+    res.json({ tone });
+  } catch (error) {
+    console.error('Tone detection error:', error.message);
+    res.status(500).json({ error: 'Tone detection failed.' });
+  }
+});
 
 export default router;
