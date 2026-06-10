@@ -6,7 +6,7 @@
   <title>CV</title>
   <style>
     @page { size: A4; margin: 24mm 22mm; }
-    @media print { body { margin: 0; } }
+    @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Helvetica Neue', 'Arial', sans-serif;
@@ -89,6 +89,7 @@
     </div>
   </header>
 
+  <!-- Omit this Summary section entirely if the CV has no summary/profile text -->
   <section class="section">
     <h2 class="section-title">Summary</h2>
     <p class="summary">{{PROFILE_SUMMARY}}</p>
