@@ -45,12 +45,24 @@ const FALLBACK_SETTINGS = {
   design_model:     'deepseek-ai/deepseek-v4-flash',
   tailor_prompt_en: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
-Rules:
+
+FACTUAL RULES (never violate):
+- Reproduce the candidate's NAME exactly — same spelling and accents, no added or removed words.
+- Never change job titles, employer/company names, dates, or the candidate's stated years of experience.
+- Do NOT invent seniority, roles, or experience the candidate does not have.
+
+REWRITE RULES:
 - Preserve ALL section headings exactly as they appear in the original CV.
 - Keep the same bullet symbol the user uses (•, -, *).
 - Only update the wording — do not add or remove sections.
-- Use strong action verbs and quantify achievements where possible.
+- Rephrase bullets toward the job description using strong action verbs; quantifying achievements with reasonable metrics is allowed.
 - {{tone}}
+
+BE CONCISE — the result must fit on ONE page:
+- Professional summary: at most 3 sentences.
+- Each work experience role: at most 3-4 bullets — keep only the strongest, most relevant points.
+- Each project: at most 2 bullets.
+- Tighten wording; cut filler.
 
 Return EXACTLY two sections with these headers on their own line (no number, no extra punctuation):
 
@@ -61,12 +73,24 @@ COVER LETTER
 [cover letter here]`,
   tailor_prompt_es: `Eres un experto en recursos humanos y redacción de CVs profesionales.
 Tu tarea es adaptar el CV del usuario a la descripción de trabajo proporcionada.
-Reglas:
+
+REGLAS DE VERACIDAD (nunca las incumplas):
+- Reproduce el NOMBRE del candidato exactamente — misma ortografía y acentos, sin añadir ni quitar palabras.
+- Nunca cambies los títulos de puesto, nombres de empresa, fechas ni los años de experiencia declarados.
+- NO inventes seniority, puestos ni experiencia que el candidato no tenga.
+
+REGLAS DE REDACCIÓN:
 - Conserva EXACTAMENTE los mismos títulos de sección que aparecen en el CV original.
 - Mantén el mismo símbolo de viñeta que usa el usuario (•, -, *).
 - Solo actualiza el contenido — no añadas ni elimines secciones.
-- Usa verbos de acción y cuantifica logros cuando sea posible.
+- Reescribe las viñetas hacia la descripción del puesto con verbos de acción; se permite cuantificar logros con métricas razonables.
 - {{tone}}
+
+SÉ CONCISO — el resultado debe caber en UNA página:
+- Resumen profesional: máximo 3 frases.
+- Cada puesto de experiencia: máximo 3-4 viñetas — solo los puntos más fuertes y relevantes.
+- Cada proyecto: máximo 2 viñetas.
+- Ajusta la redacción; elimina el relleno.
 
 Devuelve EXACTAMENTE dos secciones con estos encabezados en su propia línea (sin número, sin puntuación extra):
 
@@ -86,8 +110,9 @@ Remove all HTML comments from the final output.
 STRICT RULES:
 1. Do NOT change any CSS, class names, HTML structure, or attributes.
 2. Do NOT add new CSS, inline styles, or new elements beyond repeating the given patterns.
-3. Output ONLY the completed HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown, no code fences, no commentary.
-4. Use proper Unicode characters directly — output á, é, ñ, ·, – as-is. Do NOT use Latin-1 escapes or HTML entities for accented characters.`,
+3. Reproduce all text content VERBATIM — especially the candidate's name and all proper nouns. Do NOT add, remove, or change any words; only place the provided text into the template.
+4. Output ONLY the completed HTML document, starting with <!DOCTYPE html> and ending with </html>. No markdown, no code fences, no commentary.
+5. Use proper Unicode characters directly — output á, é, ñ, ·, – as-is. Do NOT use Latin-1 escapes or HTML entities for accented characters.`,
   style_prompt_es: `Eres un motor de plantillas HTML preciso.
 Recibes una plantilla HTML completa de CV con marcadores {{PLACEHOLDER}} y un TEXTO DEL CV ADAPTADO.
 
@@ -99,8 +124,9 @@ Elimina todos los comentarios HTML del resultado final.
 REGLAS ESTRICTAS:
 1. NO cambies ningún CSS, nombre de clase, estructura HTML ni atributos.
 2. NO añadas CSS nuevo, estilos en línea ni elementos nuevos más allá de repetir los patrones dados.
-3. Genera ÚNICAMENTE el documento HTML completado, comenzando con <!DOCTYPE html> y terminando con </html>. Sin markdown, sin bloques de código, sin comentarios.
-4. Usa caracteres Unicode correctos directamente — escribe á, é, ñ, ·, – tal cual. NO uses escapes Latin-1 ni entidades HTML para caracteres acentuados.`,
+3. Reproduce todo el texto TAL CUAL — especialmente el nombre del candidato y todos los nombres propios. NO añadas, quites ni cambies ninguna palabra; solo coloca el texto proporcionado en la plantilla.
+4. Genera ÚNICAMENTE el documento HTML completado, comenzando con <!DOCTYPE html> y terminando con </html>. Sin markdown, sin bloques de código, sin comentarios.
+5. Usa caracteres Unicode correctos directamente — escribe á, é, ñ, ·, – tal cual. NO uses escapes Latin-1 ni entidades HTML para caracteres acentuados.`,
 };
 
 const SETTINGS_TTL_MS = 5 * 60 * 1000;
@@ -163,7 +189,7 @@ function injectFitToPage(html) {
         b.style.width = (pageW / z) + 'px';   // wider pre-zoom box -> full width after zoom
         z = pageH / b.scrollHeight;
         if (z > 1.18) z = 1.18;               // modest grow -> less dead air on short CVs
-        if (z < 0.4) z = 0.4;                 // safety bound ("always one page")
+        if (z < 0.5) z = 0.5;                 // legibility backstop (strictly one page via concise content)
       }
       if (z < 1) z *= 0.97;                    // tiny safety margin so rounding can't spill to page 2
       b.style.width = (pageW / z) + 'px';
@@ -252,7 +278,7 @@ router.post('/', requireAuth(), async (req, res) => {
         { role: 'system', content: system },
         { role: 'user',   content: user }
       ],
-      temperature: 0.6,
+      temperature: 0.5,
       max_tokens: 2048,
     });
 
@@ -302,7 +328,7 @@ router.post('/style', requireAuth(), async (req, res) => {
     const response = await client.chat.completions.create({
       model: settings.design_model,
       messages,
-      temperature: 0.2,
+      temperature: 0,
       max_tokens: 6000,
     });
 
