@@ -145,6 +145,40 @@ const buildTemplateStylePrompt = (template, tailoredCV, language, settings) => {
   return { system, user };
 };
 
+// Inject a fit-to-page script so the CV always fills exactly one US-Letter sheet.
+// It locks the body to Letter width (so screen + print measure identically), then scales
+// font/spacing via CSS `zoom` (Chromium honors zoom in print) while widening the pre-zoom
+// box by 1/scale so the rendered width stays full-page — long CVs reflow tighter instead
+// of leaving side gutters. min-height is compensated so colored sidebars reach the bottom.
+function injectFitToPage(html) {
+  const script = `<script>
+  (function () {
+    var pageH = 11 * 96, pageW = 8.5 * 96;   // Letter @96dpi; templates use @page margin:0
+    function fit() {
+      var b = document.body;
+      b.style.margin = '0 auto';
+      var z = 1;
+      for (var i = 0; i < 4; i++) {
+        b.style.zoom = ''; b.style.minHeight = '0px';   // override template min-height while measuring
+        b.style.width = (pageW / z) + 'px';   // wider pre-zoom box -> full width after zoom
+        z = pageH / b.scrollHeight;
+        if (z > 1.18) z = 1.18;               // modest grow -> less dead air on short CVs
+        if (z < 0.4) z = 0.4;                 // safety bound ("always one page")
+      }
+      if (z < 1) z *= 0.97;                    // tiny safety margin so rounding can't spill to page 2
+      b.style.width = (pageW / z) + 'px';
+      b.style.zoom = z;
+      b.style.minHeight = (pageH / z) + 'px'; // keep full-bleed colored regions page-tall
+    }
+    if (document.readyState === 'complete') fit();
+    else window.addEventListener('load', fit);
+  })();
+<\/script>`;
+  return html.includes('</body>')
+    ? html.replace('</body>', script + '</body>')
+    : html + script;
+}
+
 // Fix common double-encoded UTF-8 artifacts the LLM sometimes emits
 function fixEncodingArtifacts(html) {
   return html
@@ -157,36 +191,6 @@ function fixEncodingArtifacts(html) {
     .replace(/â€œ/g, '“').replace(/â€/g, '”')
     .replace(/Â·/g, '·').replace(/Â /g, ' ');
 }
-
-const buildVisionStylePrompt = (tailoredCV, language) => {
-  const isEs = language === 'es';
-  return {
-    system: isEs
-      ? `Eres un experto en diseño de CVs y desarrollo front-end.
-La imagen adjunta muestra el CV original del usuario.
-Tu tarea es crear un documento HTML completo y autocontenido con CSS embebido que replique fielmente ese diseño visual, usando el contenido del CV ADAPTADO.
-
-REGLAS ESTRICTAS:
-1. Estudia la imagen: disposición (columnas, barra lateral), colores, tipografía, estilo de encabezados de sección, alineación del contacto — y replícalo exactamente.
-2. Usa ÚNICAMENTE el contenido del TEXTO DEL CV ADAPTADO.
-3. Genera ÚNICAMENTE el documento HTML. Comienza con <!DOCTYPE html> y termina con </html>. Sin markdown, sin bloques de código.
-4. Sin activos externos (sin fuentes CDN, sin imágenes externas). 100% autocontenido.
-5. @page { size: letter; margin: 18mm 16mm; } @media print { body { margin: 0; } }`
-      : `You are an expert CV designer and front-end developer.
-The attached image shows the user's original CV.
-Your task is to create a complete, self-contained HTML document with embedded CSS that faithfully replicates that visual design, using the content from TAILORED CV TEXT.
-
-STRICT RULES:
-1. Study the image: layout (columns, sidebar), colors, typography, section heading style, contact alignment — and replicate it exactly.
-2. Use ONLY the content from TAILORED CV TEXT.
-3. Output ONLY the HTML document. Start with <!DOCTYPE html> and end with </html>. No markdown, no code fences.
-4. No external assets (no CDN fonts, no external images). 100% self-contained.
-5. @page { size: letter; margin: 18mm 16mm; } @media print { body { margin: 0; } }`,
-    user: isEs
-      ? `TEXTO DEL CV ADAPTADO (usa este contenido):\n${tailoredCV}`
-      : `TAILORED CV TEXT (use this content):\n${tailoredCV}`
-  };
-};
 
 const NVIDIA_MODELS_FALLBACK = [
   'nvidia/llama-3.3-nemotron-super-49b-v1.5',
@@ -263,9 +267,8 @@ router.post('/', requireAuth(), async (req, res) => {
 router.post('/style', requireAuth(), async (req, res) => {
   const {
     tailoredCV,
-    language      = 'en',
-    cvStyle       = 'modern',
-    cvPreviewImage = null,
+    language = 'en',
+    cvStyle  = 'modern',
   } = req.body;
 
   if (!tailoredCV) {
@@ -273,48 +276,31 @@ router.post('/style', requireAuth(), async (req, res) => {
   }
 
   const settings = await getSettings();
-  let messages;
-  let activeModel = settings.design_model;
 
-  if (cvPreviewImage) {
-    activeModel = 'meta/llama-3.2-90b-vision-instruct';
-    const { system, user } = buildVisionStylePrompt(tailoredCV, language);
-    messages = [
-      { role: 'system', content: system },
-      {
-        role: 'user',
-        content: [
-          { type: 'image_url', image_url: { url: `data:image/png;base64,${cvPreviewImage}` } },
-          { type: 'text', text: user },
-        ],
-      },
-    ];
-  } else {
-    const allowed = ['classic', 'modern', 'creative', 'minimal'];
-    const style = allowed.includes(cvStyle) ? cvStyle : 'modern';
-    const templatesDir = path.join(__dirname, '..', 'templates');
-    let template;
-    try {
-      // Each style has multiple variants (style.html, style-2.html, …) — pick one at random
-      const variants = fs.readdirSync(templatesDir)
-        .filter(f => f === `${style}.html` || new RegExp(`^${style}-\\d+\\.html$`).test(f));
-      const pick = variants.length > 0
-        ? variants[Math.floor(Math.random() * variants.length)]
-        : `${style}.html`;
-      template = fs.readFileSync(path.join(templatesDir, pick), 'utf8');
-    } catch {
-      return res.status(500).json({ error: `Template "${style}" could not be loaded.` });
-    }
-    const { system, user } = buildTemplateStylePrompt(template, tailoredCV, language, settings);
-    messages = [
-      { role: 'system', content: system },
-      { role: 'user',   content: user },
-    ];
+  const allowed = ['classic', 'modern', 'creative', 'minimal'];
+  const style = allowed.includes(cvStyle) ? cvStyle : 'modern';
+  const templatesDir = path.join(__dirname, '..', 'templates');
+  let template;
+  try {
+    // Each style has multiple variants (style.html, style-2.html, …) — pick one at random
+    const variants = fs.readdirSync(templatesDir)
+      .filter(f => f === `${style}.html` || new RegExp(`^${style}-\\d+\\.html$`).test(f));
+    const pick = variants.length > 0
+      ? variants[Math.floor(Math.random() * variants.length)]
+      : `${style}.html`;
+    template = fs.readFileSync(path.join(templatesDir, pick), 'utf8');
+  } catch {
+    return res.status(500).json({ error: `Template "${style}" could not be loaded.` });
   }
+  const { system, user } = buildTemplateStylePrompt(template, tailoredCV, language, settings);
+  const messages = [
+    { role: 'system', content: system },
+    { role: 'user',   content: user },
+  ];
 
   try {
     const response = await client.chat.completions.create({
-      model: activeModel,
+      model: settings.design_model,
       messages,
       temperature: 0.2,
       max_tokens: 6000,
@@ -328,6 +314,7 @@ router.post('/style', requireAuth(), async (req, res) => {
       if (idx > -1) html = html.slice(idx);
       else return res.status(422).json({ error: 'AI did not return a valid HTML document.' });
     }
+    html = injectFitToPage(html);
 
     res.json({ html });
   } catch (error) {

@@ -727,7 +727,7 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
         <iframe
           ref={iframeRef}
           srcDoc={styledCV}
-          sandbox="allow-same-origin allow-modals"
+          sandbox="allow-same-origin allow-scripts allow-modals"
           title="Styled CV Preview"
           className="w-full h-full"
           style={{ border: 'none' }}
@@ -1000,7 +1000,7 @@ function TailorPage({ t, lang, tweaks }) {
     cv, setCv, jd, setJd,
     status, streamProgress, result, error,
     styledCV, styleStatus, styleError,
-    cvStyle, setCvStyle, cvPreviewImage,
+    cvStyle, setCvStyle,
     tone, setTone, suggestedTone, detectingTone,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
@@ -1107,9 +1107,6 @@ function TailorPage({ t, lang, tweaks }) {
     { id: 'modern',   label: 'Modern',   desc: 'Polished accent color' },
     { id: 'creative', label: 'Creative', desc: 'Bold sidebar design' },
     { id: 'minimal',  label: 'Minimal',  desc: 'Executive whitespace' },
-    ...(cvPreviewImage
-      ? [{ id: 'original', label: 'My design', desc: 'Replicate your uploaded CV layout (experimental)' }]
-      : []),
   ];
 
   /* ── UploadBtn ── */
