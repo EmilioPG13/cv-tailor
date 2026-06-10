@@ -8,7 +8,16 @@
     @page { size: A4; margin: 0; }
     @media print { body { margin: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --sidebar-bg: #2d3748; --sidebar-fg: #e2e8f0; --sidebar-muted: #a0aec0; --sidebar-border: #4a5568; --accent: #2d3748; }
+    :root {
+      --sidebar-bg-1: #1e1b4b;
+      --sidebar-bg-2: #312e81;
+      --sidebar-fg: #e0e7ff;
+      --sidebar-muted: #a5b4fc;
+      --sidebar-border: rgba(165, 180, 252, 0.35);
+      --accent: #4f46e5;
+      --accent-bright: #6366f1;
+      --accent-light: #eef2ff;
+    }
     body {
       font-family: 'Arial', 'Helvetica', sans-serif;
       font-size: 10pt;
@@ -19,71 +28,112 @@
     }
     /* ── Sidebar ── */
     .sidebar {
-      width: 31%;
-      background: var(--sidebar-bg);
+      width: 32%;
+      background: linear-gradient(170deg, var(--sidebar-bg-1) 0%, var(--sidebar-bg-2) 100%);
       color: var(--sidebar-fg);
-      padding: 24pt 15pt;
+      padding: 26pt 16pt;
       flex-shrink: 0;
     }
     .sidebar .name {
-      font-size: 17pt;
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: 19pt;
+      font-weight: 800;
+      line-height: 1.15;
       color: #fff;
-      margin-bottom: 4pt;
+      margin-bottom: 5pt;
     }
     .sidebar .job-title {
       font-size: 8.5pt;
       color: var(--sidebar-muted);
       text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 20pt;
+      letter-spacing: 2px;
+      margin-bottom: 6pt;
+    }
+    .sidebar .title-bar {
+      width: 28pt;
+      height: 3pt;
+      background: var(--accent-bright);
+      border-radius: 2pt;
+      margin-bottom: 18pt;
     }
     .sidebar .section-title {
-      font-size: 7pt;
-      text-transform: uppercase;
-      letter-spacing: 2.5px;
-      color: var(--sidebar-muted);
-      border-bottom: 1px solid var(--sidebar-border);
-      padding-bottom: 4pt;
-      margin: 16pt 0 9pt;
-    }
-    .sidebar p, .sidebar li { font-size: 9pt; color: #cbd5e0; line-height: 1.55; }
-    .sidebar ul { padding-left: 12pt; }
-    .sidebar li { margin-bottom: 3pt; }
-    .contact-item { font-size: 8.5pt; color: #a0aec0; margin-bottom: 5pt; word-break: break-all; }
-    /* ── Main ── */
-    .main { flex: 1; padding: 24pt 20pt; }
-    .main .section { margin-bottom: 18pt; }
-    .main .section-title {
-      font-size: 8.5pt;
+      font-size: 7.5pt;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--accent);
-      border-bottom: 2px solid var(--accent);
+      letter-spacing: 2.5px;
+      color: #c7d2fe;
+      border-bottom: 1px solid var(--sidebar-border);
       padding-bottom: 4pt;
+      margin: 17pt 0 9pt;
+    }
+    .sidebar p, .sidebar li { font-size: 9pt; color: var(--sidebar-fg); line-height: 1.55; }
+    .sidebar ul { list-style: none; }
+    .sidebar li {
+      margin-bottom: 4pt;
+      padding-left: 11pt;
+      position: relative;
+    }
+    .sidebar li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 5pt;
+      width: 4.5pt;
+      height: 4.5pt;
+      border-radius: 50%;
+      background: var(--accent-bright);
+    }
+    .contact-item { font-size: 8.5pt; color: var(--sidebar-muted); margin-bottom: 5pt; word-break: break-all; }
+    .edu-degree { color: #fff; font-weight: 700; font-size: 9pt; }
+    /* ── Main ── */
+    .main { flex: 1; padding: 26pt 22pt; }
+    .main .section { margin-bottom: 17pt; }
+    .main .section-title {
+      display: flex;
+      align-items: center;
+      gap: 7pt;
+      font-size: 9pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--sidebar-bg-1);
       margin-bottom: 10pt;
     }
-    .entry { margin-bottom: 12pt; }
+    .main .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2.5pt;
+      background: linear-gradient(to right, var(--accent-bright), var(--accent-light));
+      border-radius: 2pt;
+    }
+    .entry { margin-bottom: 12pt; padding-left: 11pt; border-left: 2.5pt solid var(--accent-light); }
     .entry-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 8pt;
     }
-    .entry-title { font-weight: 700; font-size: 10.5pt; color: #1a202c; }
-    .entry-dates { font-size: 8.5pt; color: #718096; white-space: nowrap; }
-    .entry-subtitle { font-size: 9pt; color: #718096; margin: 2pt 0 5pt; }
+    .entry-title { font-weight: 700; font-size: 10.5pt; color: #1e1b4b; }
+    .entry-dates {
+      font-size: 8.5pt;
+      color: var(--accent);
+      white-space: nowrap;
+      background: var(--accent-light);
+      border-radius: 8pt;
+      padding: 1pt 8pt;
+      font-weight: 600;
+    }
+    .entry-subtitle { font-size: 9pt; color: #6b7280; margin: 2pt 0 5pt; font-weight: 500; }
     .main ul { padding-left: 13pt; }
-    .main li { margin-bottom: 3pt; font-size: 9.5pt; }
-    .summary { font-size: 10pt; color: #444; line-height: 1.6; }
+    .main li { margin-bottom: 3pt; font-size: 9.5pt; color: #333; }
+    .main li::marker { color: var(--accent-bright); }
+    .summary { font-size: 10pt; color: #3a3f47; line-height: 1.65; }
   </style>
 </head>
 <body>
   <aside class="sidebar">
     <h1 class="name">{{NAME}}</h1>
     <p class="job-title">{{JOB_TITLE}}</p>
+    <div class="title-bar"></div>
 
     <h2 class="section-title">Contact</h2>
     <div class="contact-item">{{CONTACT_EMAIL}}</div>
@@ -99,7 +149,7 @@
     </ul>
 
     <h2 class="section-title">Education</h2>
-    <p style="color:#e2e8f0;font-weight:700;font-size:9pt">{{EDU_DEGREE_1}}</p>
+    <p class="edu-degree">{{EDU_DEGREE_1}}</p>
     <p>{{EDU_INSTITUTION_1}}</p>
     <p>{{EDU_DATES_1}}</p>
     <!-- REPEAT THE THREE <p> PATTERN FOR EACH ADDITIONAL EDUCATION ENTRY FROM THE CV -->
@@ -113,6 +163,7 @@
   </aside>
 
   <main class="main">
+    <!-- Omit this Profile section entirely if the CV has no summary/profile text -->
     <section class="section">
       <h2 class="section-title">Profile</h2>
       <p class="summary">{{PROFILE_SUMMARY}}</p>
@@ -137,16 +188,21 @@
 
     </section>
 
-    <!-- Use this section for Certifications, Projects, Awards, or other sections from the CV. Omit entirely if none exist. -->
+    <!-- Use this section for Projects, Certifications, Awards, or other sections from the CV. Repeat the whole section per extra CV section; omit entirely if none exist. -->
     <section class="section">
       <h2 class="section-title">{{OPTIONAL_SECTION_TITLE}}</h2>
       <div class="entry">
         <div class="entry-header">
           <span class="entry-title">{{OPTIONAL_ENTRY_TITLE_1}}</span>
-          <span class="entry-dates">{{OPTIONAL_ENTRY_DATE_1}}</span>
+          <span class="entry-dates">{{OPTIONAL_ENTRY_DATES_1}}</span>
         </div>
+        <div class="entry-subtitle">{{OPTIONAL_ENTRY_SUBTITLE_1}}</div>
+        <ul>
+          <li>{{OPTIONAL_BULLET_1_1}}</li>
+          <!-- Add more <li> bullets as needed; omit the <ul> if the entry has none -->
+        </ul>
       </div>
-      <!-- REPEAT OR OMIT AS NEEDED -->
+      <!-- REPEAT THE ENTRY PATTERN FOR EACH ITEM IN THIS SECTION -->
     </section>
   </main>
 </body>
