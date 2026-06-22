@@ -44,7 +44,15 @@
       "Bash(git log *)",
       "mcp__claude_ai_Supabase__list_tables",
       "mcp__claude_ai_Supabase__execute_sql",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const u=JSON.parse\\(d\\).data[0];console.log\\(JSON.stringify\\({id:u.id,public_metadata:u.public_metadata,two_factor_enabled:u.two_factor_enabled},null,2\\)\\)}\\)\")"
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const u=JSON.parse\\(d\\).data[0];console.log\\(JSON.stringify\\({id:u.id,public_metadata:u.public_metadata,two_factor_enabled:u.two_factor_enabled},null,2\\)\\)}\\)\")",
+      "Bash(npx supabase *)",
+      "Bash(curl -s -X POST https://api.supabase.com/v1/projects/riyhtuppfvcgpljqplnx/database/query -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWh0dXBwZnZjZ3BsanFwbG54Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDA2OTk5MiwiZXhwIjoyMDk1NjQ1OTkyfQ.dErKhL122sM4_gn_pZQHLOpFDT_bBCNlu_b2afgJUMY' -H 'Content-Type: application/json' -d '{\"query\":\"ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;\"}')",
+      "Bash(cd /c/Users/Emili/Desktop/Code/cv-tailor/server/templates && grep -rhoE '\\\\{\\\\{[A-Z0-9_]+\\\\}\\\\}' *.html | sort -u)",
+      "Read(//c/c/Users/Emili/Desktop/Code/cv-tailor/server/**)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(NVIDIA_API_KEY=dummy node --input-type=module -e ' *)",
+      "Bash(npx eslint *)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

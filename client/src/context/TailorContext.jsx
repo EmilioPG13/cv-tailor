@@ -67,6 +67,9 @@ export function TailorProvider({ lang, t, children }) {
   const [styleStatus,    setStyleStatus]    = useState('idle');
   const [styleError,     setStyleError]     = useState(null);
   const [cvStyle,        setCvStyle]        = useState('modern');
+  // A specific template variant pinned from the gallery (e.g. "modern-3.html");
+  // null means let the server pick a random variant for the chosen style.
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [cvPreviewImage, setCvPreviewImage] = useState(null);
   const [tone,           setTone]           = useState('professional');
   const [suggestedTone,  setSuggestedTone]  = useState(null);
@@ -107,7 +110,7 @@ export function TailorProvider({ lang, t, children }) {
   const handleClear = useCallback(() => {
     setCv(''); setJd(''); setResult(null); setStatus('idle');
     setError(null); setStyledCV(null); setStyleStatus('idle');
-    setStyleError(null); setCvPreviewImage(null);
+    setStyleError(null); setCvPreviewImage(null); setSelectedTemplate(null);
   }, []);
 
   const handleLoadSample = useCallback(() => {
@@ -167,7 +170,7 @@ export function TailorProvider({ lang, t, children }) {
       getToken().then(tok =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { tailoredCV: parsed.tailoredCV, language: lang, cvStyle },
+          { tailoredCV: parsed.tailoredCV, language: lang, cvStyle, templateFile: selectedTemplate },
           { headers: { Authorization: `Bearer ${tok}` } }
         )
       ).then(({ data: sd }) => {
@@ -197,14 +200,15 @@ export function TailorProvider({ lang, t, children }) {
       setStatus('idle');
       setStreamProgress(0);
     }
-  }, [cv, jd, tone, cvStyle, getToken]);
+  }, [cv, jd, tone, cvStyle, selectedTemplate, getToken]);
 
   return (
     <TailorContext.Provider value={{
       cv, setCv, jd, setJd,
       status, streamProgress, result,
       error, styledCV, styleStatus, styleError,
-      cvStyle, setCvStyle, cvPreviewImage, setCvPreviewImage,
+      cvStyle, setCvStyle, selectedTemplate, setSelectedTemplate,
+      cvPreviewImage, setCvPreviewImage,
       tone, setTone, suggestedTone, detectingTone,
       historyVersion,
       handleClear, handleLoadSample, handleUpload, runTailor,

@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { settingsCache } from '../settingsCache.js';
+import { injectFitToPage } from '../lib/templateRender.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -171,40 +172,6 @@ const buildTemplateStylePrompt = (template, tailoredCV, language, settings) => {
   return { system, user };
 };
 
-// Inject a fit-to-page script so the CV always fills exactly one US-Letter sheet.
-// It locks the body to Letter width (so screen + print measure identically), then scales
-// font/spacing via CSS `zoom` (Chromium honors zoom in print) while widening the pre-zoom
-// box by 1/scale so the rendered width stays full-page — long CVs reflow tighter instead
-// of leaving side gutters. min-height is compensated so colored sidebars reach the bottom.
-function injectFitToPage(html) {
-  const script = `<script>
-  (function () {
-    var pageH = 11 * 96, pageW = 8.5 * 96;   // Letter @96dpi; templates use @page margin:0
-    function fit() {
-      var b = document.body;
-      b.style.margin = '0 auto';
-      var z = 1;
-      for (var i = 0; i < 4; i++) {
-        b.style.zoom = ''; b.style.minHeight = '0px';   // override template min-height while measuring
-        b.style.width = (pageW / z) + 'px';   // wider pre-zoom box -> full width after zoom
-        z = pageH / b.scrollHeight;
-        if (z > 1.18) z = 1.18;               // modest grow -> less dead air on short CVs
-        if (z < 0.5) z = 0.5;                 // legibility backstop (strictly one page via concise content)
-      }
-      if (z < 1) z *= 0.97;                    // tiny safety margin so rounding can't spill to page 2
-      b.style.width = (pageW / z) + 'px';
-      b.style.zoom = z;
-      b.style.minHeight = (pageH / z) + 'px'; // keep full-bleed colored regions page-tall
-    }
-    if (document.readyState === 'complete') fit();
-    else window.addEventListener('load', fit);
-  })();
-<\/script>`;
-  return html.includes('</body>')
-    ? html.replace('</body>', script + '</body>')
-    : html + script;
-}
-
 // Fix common double-encoded UTF-8 artifacts the LLM sometimes emits
 function fixEncodingArtifacts(html) {
   return html
@@ -295,6 +262,7 @@ router.post('/style', requireAuth(), async (req, res) => {
     tailoredCV,
     language = 'en',
     cvStyle  = 'modern',
+    templateFile,
   } = req.body;
 
   if (!tailoredCV) {
@@ -306,14 +274,25 @@ router.post('/style', requireAuth(), async (req, res) => {
   const allowed = ['classic', 'modern', 'creative', 'minimal'];
   const style = allowed.includes(cvStyle) ? cvStyle : 'modern';
   const templatesDir = path.join(__dirname, '..', 'templates');
+  // A specific variant the user pinned from the gallery, e.g. "modern-3.html".
+  const pinned = typeof templateFile === 'string'
+    && /^(classic|modern|creative|minimal)(-\d+)?\.html$/.test(templateFile)
+    && fs.existsSync(path.join(templatesDir, templateFile))
+      ? templateFile
+      : null;
   let template;
   try {
-    // Each style has multiple variants (style.html, style-2.html, …) — pick one at random
-    const variants = fs.readdirSync(templatesDir)
-      .filter(f => f === `${style}.html` || new RegExp(`^${style}-\\d+\\.html$`).test(f));
-    const pick = variants.length > 0
-      ? variants[Math.floor(Math.random() * variants.length)]
-      : `${style}.html`;
+    let pick;
+    if (pinned) {
+      pick = pinned;
+    } else {
+      // Each style has multiple variants (style.html, style-2.html, …) — pick one at random
+      const variants = fs.readdirSync(templatesDir)
+        .filter(f => f === `${style}.html` || new RegExp(`^${style}-\\d+\\.html$`).test(f));
+      pick = variants.length > 0
+        ? variants[Math.floor(Math.random() * variants.length)]
+        : `${style}.html`;
+    }
     template = fs.readFileSync(path.join(templatesDir, pick), 'utf8');
   } catch {
     return res.status(500).json({ error: `Template "${style}" could not be loaded.` });

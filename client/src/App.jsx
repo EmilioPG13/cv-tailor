@@ -138,10 +138,8 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
     <header className="sticky top-0 z-40 bg-(--bg) shadow-[0_2px_8px_0_rgba(0,0,0,0.08)]">
       <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-6 py-3">
         {/* Logo */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-fg)]">
-            <IconBolt size={14} />
-          </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <img src="/cvtailor-icon.svg" alt="CV Tailor" className="h-16 w-16 p-0 m-0" />
           <span className="text-[14px] font-semibold tracking-tight text-[var(--fg)]">
             {t.appName}
           </span>
@@ -1000,7 +998,7 @@ function TailorPage({ t, lang, tweaks }) {
     cv, setCv, jd, setJd,
     status, streamProgress, result, error,
     styledCV, styleStatus, styleError,
-    cvStyle, setCvStyle,
+    cvStyle, setCvStyle, setSelectedTemplate,
     tone, setTone, suggestedTone, detectingTone,
     historyVersion,
     handleClear, handleLoadSample, runTailor,
@@ -1245,7 +1243,7 @@ function TailorPage({ t, lang, tweaks }) {
             {STYLE_OPTIONS.map(({ id, label, desc }) => (
               <button
                 key={id}
-                onClick={() => setCvStyle(id)}
+                onClick={() => { setCvStyle(id); setSelectedTemplate(null); }}
                 title={desc}
                 className={cn(
                   "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
