@@ -7,6 +7,7 @@ import historyRoute from './routes/history.js';
 import scrapeRoute from './routes/scrape.js';
 import analyticsRoute from './routes/analytics.js';
 import adminRoute from './routes/admin.js';
+import templatesRoute from './routes/templates.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/history', historyRoute);
 app.use('/api/scrape', scrapeRoute);
 app.use('/api/analytics', analyticsRoute);
 app.use('/api/admin', adminRoute);
+app.use('/api/templates', templatesRoute);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
