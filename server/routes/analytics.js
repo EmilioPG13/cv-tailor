@@ -1,8 +1,25 @@
 import express from 'express';
-import { requireAuth, getAuth } from '@clerk/express';
+import { requireAuth, getAuth, clerkClient } from '@clerk/express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
+
+// Roles allowed to access analytics (staff-only feature).
+const STAFF_ROLES = ['admin', 'mod'];
+
+async function requireStaff(req, res, next) {
+  try {
+    const { userId } = getAuth(req);
+    const user = await clerkClient.users.getUser(userId);
+    if (!STAFF_ROLES.includes(user.publicMetadata?.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    next();
+  } catch (err) {
+    console.error('[requireStaff] error:', err.message);
+    res.status(403).json({ error: 'Forbidden' });
+  }
+}
 
 let _supabase = null;
 function getSupabase() {
@@ -18,7 +35,7 @@ function getSupabase() {
 // GET /api/analytics/me
 // Returns usage statistics for the authenticated user:
 //   { total, perDay, topRoles }
-router.get('/me', requireAuth(), async (req, res) => {
+router.get('/me', requireAuth(), requireStaff, async (req, res) => {
   const userId = getAuth(req).userId;
 
   // --- Query 1: total row count for this user ---

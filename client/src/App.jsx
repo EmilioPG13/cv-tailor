@@ -23,6 +23,9 @@ import { TailorProvider, useTailor } from './context/TailorContext.jsx';
    Module-level constants & pure helpers
 ───────────────────────────────────────────── */
 
+// Roles allowed to see staff-only areas (Analytics, etc.).
+const STAFF_ROLES = ['admin', 'mod'];
+
 const PALETTES = [
   { id: "graphite", name: "Aurora",  swatches: ["#a5d8ff", "#c4b5fd", "#fbcfe8"] },
   { id: "sand",     name: "Sunset",  swatches: ["#fda4af", "#fdba74", "#fde68a"] },
@@ -133,6 +136,7 @@ function LanguageSegment({ lang, setLang }) {
 function TopBar({ t, lang, setLang, tweaks, setTweak }) {
   const { isSignedIn, user } = useUser();
   const isAdmin = user?.publicMetadata?.role === 'admin';
+  const isStaff = STAFF_ROLES.includes(user?.publicMetadata?.role);
 
   return (
     <header className="sticky top-0 z-40 bg-(--bg) shadow-[0_2px_8px_0_rgba(0,0,0,0.08)]">
@@ -151,7 +155,7 @@ function TopBar({ t, lang, setLang, tweaks, setTweak }) {
             { label: "Tailor",    to: "/" },
             { label: "History",   to: "/history" },
             { label: "Templates", to: "/templates" },
-            { label: "Analytics", to: "/analytics" },
+            ...(isStaff ? [{ label: "Analytics", to: "/analytics" }] : []),
           ].map(({ label, to }) => (
             <NavLink
               key={label}
@@ -1445,7 +1449,7 @@ export default function App() {
           <Route path="/"          element={<TailorPage t={t} lang={lang} tweaks={tweaks} />} />
           <Route path="/history"   element={<AuthGuard><HistoryPage t={t} lang={lang} /></AuthGuard>} />
           <Route path="/templates" element={<AuthGuard><TemplatesPage t={t} lang={lang} /></AuthGuard>} />
-          <Route path="/analytics" element={<AuthGuard><AnalyticsPage /></AuthGuard>} />
+          <Route path="/analytics" element={<AuthGuard roles={STAFF_ROLES}><AnalyticsPage /></AuthGuard>} />
           <Route path="/admin"     element={<AuthGuard><AdminPage /></AuthGuard>} />
         </Routes>
       </TailorProvider>
