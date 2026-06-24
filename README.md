@@ -1,5 +1,7 @@
 # CV Tailor
 
+**🔗 Live app: [cv-tailor-gold-zeta.vercel.app](https://cv-tailor-gold-zeta.vercel.app/)**
+
 CV Tailor is a bilingual (English / Spanish) web app that rewrites your CV to match a specific job description and generates a matching cover letter. It then renders the tailored CV into a polished, print-ready HTML document that fits exactly one US Letter page, ready to save as a PDF.
 
 You paste (or upload) your existing CV, paste a job description (or scrape it from a URL), pick a visual style, and the app produces three things: a list of rewritten bullet points, a full cover letter, and a designed one-page CV you can download or print.
