@@ -1,5 +1,6 @@
 import express from 'express';
-import { requireAuth, getAuth, clerkClient } from '@clerk/express';
+import { getAuth, clerkClient } from '@clerk/express';
+import { requireAuth } from '../lib/requireAuth.js';
 import { createClient } from '@supabase/supabase-js';
 import { invalidateSettingsCache } from '../settingsCache.js';
 

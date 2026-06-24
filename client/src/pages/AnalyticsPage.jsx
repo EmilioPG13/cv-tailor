@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 import {
-  cn, Card, CardHeader, CardTitle, CardContent,
+  Card, CardHeader, CardTitle, CardContent,
   IconBolt, IconTarget,
 } from '../components/ui.jsx';
 

@@ -52,7 +52,29 @@
       "Bash(node --input-type=module -e ' *)",
       "Bash(NVIDIA_API_KEY=dummy node --input-type=module -e ' *)",
       "Bash(npx eslint *)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(curl -s -m 10 -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:3001/api/tailor -H \"Content-Type: application/json\" -d '{\"cv\":\"x\",\"jobDescription\":\"y\"}')",
+      "Bash(curl -s -m 10 -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/api/history)",
+      "Bash(curl -s -m 10 -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/api/templates)",
+      "Bash(curl -s -m 10 -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/api/analytics)",
+      "Bash(curl -s -m 10 -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:3001/api/scrape -H \"Content-Type: application/json\" -d '{\"url\":\"https://example.com\"}')",
+      "Bash(curl -s -m 10 -w '\\\\nHTTP %{http_code}\\\\n' http://localhost:3001/api/history -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(curl -s -m 10 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -m 10 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:5173/src/main.jsx)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const r=JSON.parse\\(await new Response\\(process.stdin\\).text\\(\\)\\);let n=0;const m={};r.forEach\\(f=>f.messages.forEach\\(x=>{n++;m[x.ruleId]=\\(m[x.ruleId]||0\\)+1}\\)\\);console.log\\('total:',n\\);console.log\\(JSON.stringify\\(m,null,2\\)\\)\")",
+      "Bash(node -e \"console.log\\('pdfjs-dist:', require\\('pdfjs-dist/package.json'\\).version\\); console.log\\('mammoth:', require\\('mammoth/package.json'\\).version\\)\")",
+      "Bash(node index.js)",
+      "Bash(curl -s -m 10 -w \"\\\\nHTTP %{http_code}\\\\n\" -X POST http://localhost:3001/api/tailor -H \"Content-Type: application/json\" -d '{\"cv\":\"x\",\"jobDescription\":\"y\"}')",
+      "Bash(curl -s -m 10 -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3001/api/history)",
+      "Bash(curl -s -m 10 -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3001/api/templates)",
+      "Bash(curl -s -m 10 -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3001/api/analytics/me)",
+      "Bash(curl -s -m 10 -w \"\\\\nHTTP %{http_code}\\\\n\" -X POST http://localhost:3001/api/scrape -H \"Content-Type: application/json\" -d '{\"url\":\"https://example.com\"}')",
+      "Bash(node -e \"const r=JSON.parse\\(await new Response\\(process.stdin\\).text\\(\\)\\);let n=0;r.forEach\\(f=>f.messages.forEach\\(\\(\\)=>n++\\)\\);console.log\\('errors:',n\\)\")",
+      "Read(//c/Users/Emili/Desktop/Code/**)",
+      "Bash(node --check routes/tailor.js)",
+      "Bash(node --check routes/history.js)",
+      "Bash(node --check routes/analytics.js)"
     ]
   }
 }

@@ -1,15 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { useUser, useAuth, SignInButton, UserButton } from '@clerk/clerk-react';
 import axios from 'axios';
 import { STRINGS } from './data/strings.js';
-import { SAMPLE } from './data/sample.js';
-import { extractText } from './utils/fileParsing.js';
 import {
   cn, Button, Card, CardHeader, CardTitle, CardDescription, CardContent,
   Badge, Textarea, Tabs, Separator, Toggle,
   IconSparkle, IconCopy, IconCheck, IconDownload, IconChevron, IconRefresh,
-  IconWand, IconFile, IconBriefcase, IconUpload, IconGithub, IconGlobe,
+  IconWand, IconFile, IconBriefcase, IconUpload, IconGlobe,
   IconSettings, IconHistory, IconBolt, IconTarget,
 } from './components/ui.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
@@ -37,47 +35,6 @@ const TONE_OPTIONS = [
   { id: 'conversational', label: 'Conversational' },
   { id: 'enthusiastic',   label: 'Enthusiastic' },
 ];
-
-function parseApiResult(text, lang) {
-  const cvIdx   = text.search(/^(?:[\d.]+\s*)?(TAILORED\s+CV|CV\s+ADAPTADO|CV\s+BULLETS?)\s*$/im);
-  const coverIdx = text.search(/^(?:[\d.]+\s*)?(COVER\s+LETTER|CARTA\s+DE\s+PRESENTACI[ÓO]N)\s*$/im);
-  let tailoredCV = "", coverText = "";
-  if (cvIdx >= 0) {
-    const cvStart = text.indexOf('\n', cvIdx) + 1;
-    const cvEnd = coverIdx >= 0 ? coverIdx : text.length;
-    tailoredCV = text.slice(cvStart, cvEnd).trim();
-  } else {
-    tailoredCV = coverIdx >= 0 ? text.slice(0, coverIdx).trim() : text;
-  }
-  if (coverIdx >= 0) {
-    const coverStart = text.indexOf('\n', coverIdx) + 1;
-    coverText = text.slice(coverStart).trim();
-  }
-  const bullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => /^[•\-\*]/.test(l) && l.length > 10)
-    .map(l => ({ tag: "REWRITTEN", text: l.replace(/^[•\-\*]\s+/, "").trim(), original: "", match: [] }))
-    .filter(b => b.text.length > 5);
-  const fallbackBullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => l.length > 10)
-    .map(l => ({ tag: "REWRITTEN", text: l.replace(/^[•\-\*\d]+\.?\s+/, "").trim(), original: "", match: [] }))
-    .filter(b => b.text.length > 5);
-  return {
-    bullets: bullets.length > 0 ? bullets : fallbackBullets.length > 0 ? fallbackBullets : [{ tag: "REWRITTEN", text: tailoredCV || text, original: "", match: [] }],
-    cover: coverText,
-    tailoredCV,
-    fit: 88,
-    keywords: [],
-    lang,
-  };
-}
-
-function extractJobTitle(jd) {
-  const firstLine = (jd || "").split('\n').find(l => l.trim()) || "";
-  return firstLine.split(/[—\-–|·]/)[0].trim().slice(0, 40) || "Position";
-}
-
-function extractCompanyName(jd) {
-  const match = (jd || "").match(/[—\-–|·]\s*([^,\n\(]+)/);
-  return match ? match[1].trim().slice(0, 30) : "Company";
-}
 
 export function relativeTime(isoString) {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -323,7 +280,7 @@ function FitGauge({ fit, label }) {
    Hero
 ───────────────────────────────────────────── */
 
-function Hero({ t, status, progress, hasResult, fit }) {
+function Hero({ t, status, hasResult, fit }) {
   const step1State = status === "idle" && !hasResult ? "active" : "done";
   const step2State = status === "streaming" ? "active" : hasResult ? "done" : "idle";
   const step3State = hasResult ? "active" : "idle";
@@ -743,7 +700,7 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
    OutputCard
 ───────────────────────────────────────────── */
 
-function OutputCard({ t, lang, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact, styledCV, styleStatus, styleError }) {
+function OutputCard({ t, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact, styledCV, styleStatus, styleError }) {
   const hasResult = !!result;
 
   const tabItems = [

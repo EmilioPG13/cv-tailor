@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 import {
-  cn, Button, Card, CardHeader, CardTitle, CardContent,
+  cn, Button, Card,
   Badge, IconHistory, IconChevron, IconTarget,
 } from '../components/ui.jsx';
 
@@ -19,7 +19,7 @@ function relativeTime(isoString) {
   return `${days} days ago`;
 }
 
-export default function HistoryPage({ t, lang }) {
+export default function HistoryPage({ lang }) {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [entries, setEntries]   = useState([]);
