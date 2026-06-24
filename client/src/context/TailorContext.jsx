@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
-import { extractText } from '../utils/fileParsing.js';
 import { SAMPLE } from '../data/sample.js';
 
 const TailorContext = createContext(null);
@@ -122,10 +121,13 @@ export function TailorProvider({ lang, t, children }) {
   // Returns a Promise so TailorPage can attach loading/error UI state
   const handleUpload = useCallback((target, file) => {
     if (!file) return Promise.reject(new Error('No file'));
-    return extractText(file).then(({ text, previewImage }) => {
-      (target === 'cv' ? setCv : setJd)(text);
-      if (target === 'cv') setCvPreviewImage(previewImage ?? null);
-    });
+    // Lazy-load the parser (pdf.js + mammoth are heavy) only on first upload.
+    return import('../utils/fileParsing.js')
+      .then(({ extractText }) => extractText(file))
+      .then(({ text, previewImage }) => {
+        (target === 'cv' ? setCv : setJd)(text);
+        if (target === 'cv') setCvPreviewImage(previewImage ?? null);
+      });
   }, []);
 
   const runTailor = useCallback(async () => {

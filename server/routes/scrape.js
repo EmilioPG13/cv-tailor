@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '@clerk/express';
+import { requireAuth } from '../lib/requireAuth.js';
 import FirecrawlApp from '@mendable/firecrawl-js';
 
 const router = express.Router();

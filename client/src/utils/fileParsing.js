@@ -1,3 +1,10 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import mammoth from 'mammoth/mammoth.browser.js';
+
+// Point pdf.js at the worker bundled by Vite (no CDN dependency).
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
 function stripHTML(html) {
   const div = document.createElement("div");
   div.innerHTML = html;
@@ -48,9 +55,8 @@ async function renderPDFPageToBase64(pdf) {
 }
 
 async function extractPDF(file) {
-  if (!window.pdfjsLib) throw new Error("PDF parser not loaded");
   const buf = await readAsArrayBuffer(file);
-  const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
 
   // Extract text from all pages
   let out = "";
@@ -75,9 +81,8 @@ async function extractPDF(file) {
 }
 
 async function extractDOCX(file) {
-  if (!window.mammoth) throw new Error("DOCX parser not loaded");
   const buf = await readAsArrayBuffer(file);
-  const res = await window.mammoth.extractRawText({ arrayBuffer: buf });
+  const res = await mammoth.extractRawText({ arrayBuffer: buf });
   return { text: (res.value || "").replace(/\n{3,}/g, "\n\n").trim(), previewImage: null };
 }
 

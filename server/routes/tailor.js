@@ -1,6 +1,6 @@
 import express from 'express';
 import OpenAI from 'openai';
-import { requireAuth } from '@clerk/express';
+import { requireAuth } from '../lib/requireAuth.js';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';

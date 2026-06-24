@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '@clerk/express';
+import { requireAuth } from '../lib/requireAuth.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

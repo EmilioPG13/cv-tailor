@@ -1,4 +1,3 @@
-import { useState } from 'react';
 
 /* ---------- Icons (minimal, hand-tuned, ~14px) ---------- */
 export const Icon = ({ d, size = 14, stroke = 1.6, fill = "none" }) => (
