@@ -731,7 +731,9 @@ function TruncatedNotice({ t, onRegenerate }) {
    OutputCard
 ───────────────────────────────────────────── */
 
-function OutputCard({ t, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact, styledCV, styleStatus, styleError }) {
+// Exported so the truncation notice can be tested through the component that
+// decides whether to show it, rather than in isolation.
+export function OutputCard({ t, status, progress, result, tab, setTab, copy, copied, dl, regenerate, compact, styledCV, styleStatus, styleError }) {
   const hasResult = !!result;
 
   const tabItems = [
