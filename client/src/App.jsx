@@ -30,6 +30,10 @@ const PALETTES = [
   { id: "forest",   name: "Mint",    swatches: ["#6ee7b7", "#a7f3d0", "#bae6fd"] },
 ];
 
+// The server returns up to 20 matched terms; the rest collapse into a "+N" with
+// the full list on hover, so the header row does not wrap into a wall of badges.
+const KEYWORDS_SHOWN = 8;
+
 const TONE_OPTIONS = [
   { id: 'professional',   label: 'Professional' },
   { id: 'conversational', label: 'Conversational' },
@@ -242,14 +246,14 @@ function StepLine({ active }) {
    FitGauge
 ───────────────────────────────────────────── */
 
-function FitGauge({ fit, label }) {
+function FitGauge({ fit, label, hint }) {
   const r = 28;
   const circ = 2 * Math.PI * r;
   const pct = (fit ?? 0) / 100;
   const dash = circ * pct;
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1" title={hint}>
       <div className="relative flex items-center justify-center">
         <svg width="72" height="72" viewBox="0 0 72 72">
           <circle
@@ -299,7 +303,7 @@ function Hero({ t, status, hasResult, fit }) {
 
         {hasResult && fit != null && (
           <div className="anim-fade">
-            <FitGauge fit={fit} label={t.fit} />
+            <FitGauge fit={fit} label={t.fit} hint={t.fitHint} />
           </div>
         )}
       </div>
@@ -374,7 +378,7 @@ function HistoryCard({ t, history }) {
               <li key={item.id} className="flex items-center gap-3 py-2.5">
                 {/* Fit dot */}
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--muted)] text-[10px] font-bold tabular-nums text-[var(--accent)]">
-                  {item.fit}
+                  {item.fit ?? '—'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-[var(--fg)] truncate">{item.role}</p>
@@ -542,11 +546,19 @@ function BulletsView({ t, result, copy, copied }) {
           <span className="text-[10.5px] text-[var(--muted-fg)]">{t.bulletsSubLabel}</span>
         </div>
         {result.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             <span className="text-[10.5px] text-[var(--muted-fg)] mr-1">{t.matchedKeywords}:</span>
-            {result.keywords.map((kw, i) => (
+            {result.keywords.slice(0, KEYWORDS_SHOWN).map((kw, i) => (
               <Badge key={i} variant="accent">{kw}</Badge>
             ))}
+            {result.keywords.length > KEYWORDS_SHOWN && (
+              <span
+                className="text-[10.5px] text-[var(--muted-fg)]"
+                title={result.keywords.slice(KEYWORDS_SHOWN).join(', ')}
+              >
+                +{result.keywords.length - KEYWORDS_SHOWN}
+              </span>
+            )}
           </div>
         )}
         <Button
@@ -676,7 +688,7 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
             <IconDownload size={12} /> {t.downloadHtml}
           </Button>
           <Button variant="ghost" size="xs"
-            onClick={() => iframeRef.current?.contentWindow?.print()}>
+            onClick={() => iframeRef.current?.contentWindow?.postMessage('cv-tailor:print', '*')}>
             <IconFile size={12} /> {t.printPdf}
           </Button>
         </div>
@@ -686,7 +698,11 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
         <iframe
           ref={iframeRef}
           srcDoc={styledCV}
-          sandbox="allow-same-origin allow-scripts allow-modals"
+          // No allow-same-origin: this document is model-generated from a job
+          // description we did not write, so it must not be able to reach the
+          // parent DOM, localStorage, or the Clerk session token. Without it the
+          // frame gets an opaque origin, so printing goes through postMessage.
+          sandbox="allow-scripts allow-modals"
           title="Styled CV Preview"
           className="w-full h-full"
           style={{ border: 'none' }}
@@ -1042,10 +1058,13 @@ function TailorPage({ t, lang, tweaks }) {
     (async () => {
       try {
         const token = await getToken();
+        // Summary rows only: this sidebar shows five titles, and the full
+        // payload carries the CV, job description, and cover letter for each.
         const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/history`, {
           headers: { Authorization: `Bearer ${token}` },
+          params: { summary: 1, limit: 5 },
         });
-        setRecentHistory(data.slice(0, 5).map(e => ({ ...e, when: relativeTime(e.createdAt) })));
+        setRecentHistory(data.map(e => ({ ...e, when: relativeTime(e.createdAt) })));
       } catch {}
     })();
   }, [historyVersion, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps

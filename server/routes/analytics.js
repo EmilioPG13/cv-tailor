@@ -1,7 +1,7 @@
 import express from 'express';
 import { getAuth, clerkClient } from '@clerk/express';
 import { requireAuth } from '../lib/requireAuth.js';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '../lib/supabase.js';
 
 const router = express.Router();
 
@@ -20,17 +20,6 @@ async function requireStaff(req, res, next) {
     console.error('[requireStaff] error:', err.message);
     res.status(403).json({ error: 'Forbidden' });
   }
-}
-
-let _supabase = null;
-function getSupabase() {
-  if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
-    }
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  }
-  return _supabase;
 }
 
 // GET /api/analytics/me

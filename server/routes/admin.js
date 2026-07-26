@@ -1,21 +1,10 @@
 import express from 'express';
 import { getAuth, clerkClient } from '@clerk/express';
 import { requireAuth } from '../lib/requireAuth.js';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '../lib/supabase.js';
 import { invalidateSettingsCache } from '../settingsCache.js';
 
 const router = express.Router();
-
-let _supabase = null;
-function getSupabase() {
-  if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
-    }
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  }
-  return _supabase;
-}
 
 async function requireAdmin(req, res, next) {
   try {
@@ -38,27 +27,29 @@ async function requireAdmin(req, res, next) {
 router.get('/stats', requireAuth(), requireAdmin, async (req, res) => {
   const [
     { count: totalCVs, error: e1 },
-    { count: totalUsers, error: e2 },
-    { count: totalTemplates, error: e3 },
+    { count: totalTemplates, error: e2 },
   ] = await Promise.all([
     getSupabase().from('history').select('*', { count: 'exact', head: true }),
-    getSupabase().from('history').select('user_id', { count: 'exact', head: true }),
     getSupabase().from('templates').select('*', { count: 'exact', head: true }),
   ]);
 
-  if (e1 || e2 || e3) return res.status(500).json({ error: 'Failed to fetch stats' });
+  if (e1 || e2) return res.status(500).json({ error: 'Failed to fetch stats' });
 
-  // unique users: count distinct user_ids
-  const { data: uniqueRows, error: e4 } = await getSupabase()
+  // Distinct users. PostgREST cannot COUNT(DISTINCT …), so the ids are pulled
+  // and de-duplicated here. The cap means the figure understates once history
+  // passes it — move this to a database view or an RPC before that matters.
+  const UNIQUE_USER_SCAN_LIMIT = 10000;
+  const { data: uniqueRows, error: e3 } = await getSupabase()
     .from('history')
     .select('user_id')
-    .limit(10000);
+    .limit(UNIQUE_USER_SCAN_LIMIT);
 
-  if (e4) return res.status(500).json({ error: 'Failed to fetch user count' });
+  if (e3) return res.status(500).json({ error: 'Failed to fetch user count' });
 
   const uniqueUsers = new Set(uniqueRows.map(r => r.user_id)).size;
+  const uniqueUsersCapped = uniqueRows.length >= UNIQUE_USER_SCAN_LIMIT;
 
-  res.json({ totalCVs, uniqueUsers, totalTemplates });
+  res.json({ totalCVs, uniqueUsers, uniqueUsersCapped, totalTemplates });
 });
 
 // GET /api/admin/templates

@@ -12,14 +12,15 @@ import { STRINGS } from './data/strings.js';
 
 afterEach(cleanup);
 
-function renderOutput({ truncated, lang = 'en', regenerate = () => {} } = {}) {
+function renderOutput({ truncated, lang = 'en', regenerate = () => {}, keywords = [] } = {}) {
   const t = STRINGS[lang];
   const result = {
     bullets: [{ tag: 'REWRITTEN', text: 'Led the billing service migration.', original: '', match: [] }],
     cover: 'Dear Hiring Manager,',
     tailoredCV: 'Jane Doe\n• Led the billing service migration.',
-    fit: 88,
-    keywords: [],
+    fit: 72,
+    keywords,
+    missingKeywords: [],
     truncated,
     lang,
   };
@@ -91,5 +92,35 @@ describe('truncation notice', () => {
 
     // A truncated run still returns a usable CV; the notice must not replace it.
     expect(screen.getByText('Led the billing service migration.')).toBeDefined();
+  });
+});
+
+// This block was dead for the life of the feature: the client hardcoded
+// `keywords: []`, so the guard on it never passed and nothing ever rendered.
+describe('matched keywords', () => {
+  test('renders the terms the server reported as matched', () => {
+    renderOutput({ keywords: ['typescript', 'kubernetes', 'postgresql'] });
+
+    expect(screen.getByText('typescript')).toBeDefined();
+    expect(screen.getByText('kubernetes')).toBeDefined();
+    expect(screen.getByText('postgresql')).toBeDefined();
+  });
+
+  test('stays hidden when nothing matched', () => {
+    const t = renderOutput({ keywords: [] });
+
+    expect(screen.queryByText(`${t.matchedKeywords}:`)).toBeNull();
+  });
+
+  test('collapses a long list behind a +N with the rest on hover', () => {
+    const keywords = ['a1', 'b2', 'c3', 'd4', 'e5', 'f6', 'g7', 'h8', 'i9', 'j10', 'k11'];
+    renderOutput({ keywords });
+
+    expect(screen.getByText('a1')).toBeDefined();
+    expect(screen.getByText('h8')).toBeDefined();
+    // 11 matched, 8 shown, so 3 collapse.
+    expect(screen.queryByText('i9')).toBeNull();
+    const more = screen.getByText('+3');
+    expect(more.getAttribute('title')).toBe('i9, j10, k11');
   });
 });

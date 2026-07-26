@@ -124,6 +124,42 @@ test('GET /api/history rejects an unauthenticated request', async () => {
   assert.equal(requests.length, 0, 'must not query the database when unauthenticated');
 });
 
+// The sidebar renders five titles; the default payload carries the full CV, job
+// description and cover letter for each row.
+test('GET /api/history?summary=1 asks the database only for list columns', async () => {
+  resetStub([dbRow]);
+
+  await fetch(`${baseUrl}/api/history?summary=1`);
+
+  const selected = decodeURIComponent(requests[0].url);
+  assert.match(selected, /select=id,role,company,lang,fit,created_at/);
+  for (const heavy of ['cv', 'jd', 'tailored_cv', 'cover']) {
+    assert.ok(!new RegExp(`[,=]${heavy}[,&]`).test(selected), `${heavy} should not be selected`);
+  }
+});
+
+test('GET /api/history without summary still returns the full row', async () => {
+  resetStub([dbRow]);
+
+  await fetch(`${baseUrl}/api/history`);
+
+  assert.match(decodeURIComponent(requests[0].url), /select=\*/);
+});
+
+test('GET /api/history honours a limit and caps it', async () => {
+  resetStub([dbRow]);
+  await fetch(`${baseUrl}/api/history?limit=5`);
+  assert.match(requests[0].url, /limit=5/);
+
+  resetStub([dbRow]);
+  await fetch(`${baseUrl}/api/history?limit=5000`);
+  assert.match(requests[0].url, /limit=50/, 'an oversized limit must be capped');
+
+  resetStub([dbRow]);
+  await fetch(`${baseUrl}/api/history?limit=nonsense`);
+  assert.match(requests[0].url, /limit=50/, 'a junk limit must fall back to the default');
+});
+
 test('POST /api/history accepts tailoredCv and echoes it back mapped', async () => {
   resetStub();
 
