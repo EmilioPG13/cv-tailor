@@ -208,11 +208,29 @@ All endpoints are mounted under `/api`. Every endpoint except the two read-only 
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/tailor` | Rewrites a CV and writes a cover letter. Body: `cv`, `jobDescription`, `language`, `tone`. Returns the combined `result` text. |
+| `POST` | `/api/tailor` | Rewrites a CV and writes a cover letter. Body: `cv`, `jobDescription`, `language`, `tone`. Returns `tailoredCv`, `coverLetter`, `truncated`, and the combined `result` text. |
 | `POST` | `/api/tailor/style` | Renders the tailored CV into a styled HTML document. Body: `tailoredCV`, `language`, `cvStyle`. Returns `html`. |
 | `POST` | `/api/tailor/detect-tone` | Suggests a tone from a job description. Body: `jobDescription`, `language`. Returns `tone`. |
 | `GET` | `/api/tailor/info` | Returns the active `llm_model` and `design_model` (no auth). |
 | `GET` | `/api/tailor/models` | Lists available models, with a built-in fallback list (no auth). |
+
+`POST /api/tailor` responds with the two sections already split apart, so callers
+do not have to scan the prose for headings:
+
+```json
+{
+  "tailoredCv": "Jane Doe\n• Led migration of the billing service…",
+  "coverLetter": "Dear Hiring Manager,…",
+  "truncated": false,
+  "result": "TAILORED CV\nJane Doe\n…\n\nCOVER LETTER\nDear Hiring Manager,…"
+}
+```
+
+`result` is the raw two-section text, kept for backward compatibility — prefer
+`tailoredCv` and `coverLetter`. `truncated` is `true` when the model hit its
+token ceiling mid-generation; in that case `tailoredCv` may end mid-sentence and
+`coverLetter` may be empty, so treat the run as a failure rather than a short
+answer.
 
 ### History
 

@@ -5,7 +5,10 @@ import { SAMPLE } from '../data/sample.js';
 
 const TailorContext = createContext(null);
 
-function parseApiResult(text, lang) {
+// Split the two headed sections out of the raw response. The server does this
+// for us now; this is only reached when talking to a deploy that predates the
+// tailoredCv/coverLetter fields, since client and server ship independently.
+function splitSectionsFallback(text) {
   const cvIdx   = text.search(/^(?:[\d.]+\s*)?(TAILORED\s+CV|CV\s+ADAPTADO|CV\s+BULLETS?)\s*$/im);
   const coverIdx = text.search(/^(?:[\d.]+\s*)?(COVER\s+LETTER|CARTA\s+DE\s+PRESENTACI[ÓO]N)\s*$/im);
   let tailoredCV = '', coverText = '';
@@ -20,6 +23,18 @@ function parseApiResult(text, lang) {
     const coverStart = text.indexOf('\n', coverIdx) + 1;
     coverText = text.slice(coverStart).trim();
   }
+  return { tailoredCV, coverText };
+}
+
+// `data` is the full POST /api/tailor payload, not just the raw text — the
+// server already returns the two sections split apart.
+function parseApiResult(data, lang) {
+  const text = data.result ?? '';
+  const hasServerSplit = typeof data.tailoredCv === 'string';
+  const { tailoredCV, coverText } = hasServerSplit
+    ? { tailoredCV: data.tailoredCv, coverText: data.coverLetter ?? '' }
+    : splitSectionsFallback(text);
+
   const bullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => /^[•\-\*]/.test(l) && l.length > 10)
     .map(l => ({ tag: 'REWRITTEN', text: l.replace(/^[•\-\*]\s+/, '').trim(), original: '', match: [] }))
     .filter(b => b.text.length > 5);
@@ -32,6 +47,7 @@ function parseApiResult(text, lang) {
     tailoredCV,
     fit: 88,
     keywords: [],
+    truncated: data.truncated === true,
     lang,
   };
 }
@@ -162,7 +178,7 @@ export function TailorProvider({ lang, t, children }) {
       );
       cancelAnimationFrame(animFrame);
       setStreamProgress(1);
-      const parsed = parseApiResult(data.result, lang);
+      const parsed = parseApiResult(data, lang);
       setResult(parsed);
       setStatus('done');
 
