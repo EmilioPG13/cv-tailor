@@ -55,6 +55,8 @@ export const STRINGS = {
     detectingTone:   "Detecting…",
     aiSuggests:      "AI suggests",
     aiSuggestsBasis: "based on the job description",
+    truncatedTitle:  "This result was cut short",
+    truncatedBody:   "The model hit its length limit mid-sentence, so the end of your CV — and the cover letter — may be missing. Regenerate to try again.",
   },
   es: {
     appName: "CV Tailor",
@@ -112,5 +114,7 @@ export const STRINGS = {
     detectingTone:   "Detectando…",
     aiSuggests:      "La IA sugiere",
     aiSuggestsBasis: "según la descripción del puesto",
+    truncatedTitle:  "Este resultado quedó incompleto",
+    truncatedBody:   "El modelo alcanzó su límite de longitud a mitad de frase, así que puede faltar el final de tu CV y la carta de presentación. Regenera para intentarlo de nuevo.",
   },
 };

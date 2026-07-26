@@ -132,7 +132,7 @@ export default function HistoryPage({ lang }) {
             {expanded === entry.id && (
               <div className="border-t border-[var(--border)] px-4 pb-4 pt-3 flex flex-col gap-3 anim-fade">
                 <pre className="overflow-auto rounded-xl border border-[var(--border)] bg-[var(--muted)]/50 p-4 text-[12px] font-mono leading-relaxed text-[var(--fg)] whitespace-pre-wrap break-words max-h-64">
-                  {entry.tailoredCV}
+                  {entry.tailoredCv}
                 </pre>
 
                 {entry.cover && (

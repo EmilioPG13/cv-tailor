@@ -2,6 +2,7 @@ import express from 'express';
 import { getAuth } from '@clerk/express';
 import { requireAuth } from '../lib/requireAuth.js';
 import { createClient } from '@supabase/supabase-js';
+import { toHistoryEntry } from '../lib/historyEntry.js';
 
 const router = express.Router();
 
@@ -26,14 +27,17 @@ router.get('/', requireAuth(), async (req, res) => {
     .limit(50);
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.json(data.map(toHistoryEntry));
 });
 
 // POST /api/history — save a new entry
 router.post('/', requireAuth(), async (req, res) => {
-  const { role, company, lang, fit, cv, jd, tailoredCV, cover } = req.body;
-  if (!role || !tailoredCV) {
-    return res.status(400).json({ error: 'role and tailoredCV are required.' });
+  const { role, company, lang, fit, cv, jd, cover } = req.body;
+  // `tailoredCV` is the older spelling; still accepted so an existing client
+  // keeps working against a newer server.
+  const tailoredCv = req.body.tailoredCv ?? req.body.tailoredCV;
+  if (!role || !tailoredCv) {
+    return res.status(400).json({ error: 'role and tailoredCv are required.' });
   }
 
   const { data, error } = await getSupabase()
@@ -46,7 +50,7 @@ router.post('/', requireAuth(), async (req, res) => {
       fit:         fit ?? null,
       cv:          cv          || '',
       jd:          jd          || '',
-      tailored_cv: tailoredCV,
+      tailored_cv: tailoredCv,
       cover:       cover       || '',
     })
     .select()
@@ -54,8 +58,7 @@ router.post('/', requireAuth(), async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // normalise column name back to camelCase for the client
-  res.status(201).json({ ...data, tailoredCV: data.tailored_cv });
+  res.status(201).json(toHistoryEntry(data));
 });
 
 // DELETE /api/history/:id — only the owner can delete

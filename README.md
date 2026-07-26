@@ -209,7 +209,7 @@ All endpoints are mounted under `/api`. Every endpoint except the two read-only 
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/api/tailor` | Rewrites a CV and writes a cover letter. Body: `cv`, `jobDescription`, `language`, `tone`. Returns `tailoredCv`, `coverLetter`, `truncated`, and the combined `result` text. |
-| `POST` | `/api/tailor/style` | Renders the tailored CV into a styled HTML document. Body: `tailoredCV`, `language`, `cvStyle`. Returns `html`. |
+| `POST` | `/api/tailor/style` | Renders the tailored CV into a styled HTML document. Body: `tailoredCv`, `language`, `cvStyle`. Returns `html`. |
 | `POST` | `/api/tailor/detect-tone` | Suggests a tone from a job description. Body: `jobDescription`, `language`. Returns `tone`. |
 | `GET` | `/api/tailor/info` | Returns the active `llm_model` and `design_model` (no auth). |
 | `GET` | `/api/tailor/models` | Lists available models, with a built-in fallback list (no auth). |
@@ -237,8 +237,13 @@ answer.
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/history` | Returns the signed-in user's saved runs, newest first. |
-| `POST` | `/api/history` | Saves a new run. |
+| `POST` | `/api/history` | Saves a new run. Body: `role`, `tailoredCv`, and optionally `company`, `lang`, `fit`, `cv`, `jd`, `cover`. |
 | `DELETE` | `/api/history/:id` | Deletes one of the user's own runs. |
+
+History rows are returned in camelCase — `createdAt` and `tailoredCv`, not the
+underlying `created_at` and `tailored_cv` columns. The older `tailoredCV`
+spelling is still accepted in request bodies on `/api/history` and
+`/api/tailor/style`, but responses only ever use `tailoredCv`.
 
 ### Analytics
 
