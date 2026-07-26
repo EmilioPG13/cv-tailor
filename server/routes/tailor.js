@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { settingsCache } from '../settingsCache.js';
 import { injectFitToPage } from '../lib/templateRender.js';
+import { splitTailorSections } from '../lib/tailorSections.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -172,6 +173,37 @@ const buildTemplateStylePrompt = (template, tailoredCV, language, settings) => {
   return { system, user };
 };
 
+// Token budget for the tailoring call.
+//
+// A one-page CV plus a cover letter is ~1,200-1,600 tokens of visible output, so
+// the old 2048 ceiling looked generous. It wasn't: the default tailor model is a
+// reasoning model, and its internal thinking is billed against this same budget.
+// That overhead varies run to run, so an unchanged CV/job-description pair could
+// come back whole one time and cut mid-word the next, losing the COVER LETTER
+// section entirely. Sizing this at roughly 5x the visible output keeps a variable
+// reasoning cost from eating into the answer.
+const TAILOR_MAX_TOKENS = 8192;
+
+// Report how a completion ended so a clipped response reads as a truncation
+// rather than as a short answer. finish_reason === 'length' means the model was
+// cut off mid-generation; 'stop' means it finished on its own terms.
+// Returns true when the response was truncated.
+function logCompletion(label, response) {
+  const finishReason = response.choices?.[0]?.finish_reason ?? 'unknown';
+  const usage = response.usage ?? {};
+  const reasoning = usage.completion_tokens_details?.reasoning_tokens;
+  const tokens = `completion=${usage.completion_tokens ?? '?'}`
+    + (reasoning != null ? ` (reasoning=${reasoning})` : '')
+    + ` prompt=${usage.prompt_tokens ?? '?'}`;
+
+  if (finishReason === 'length') {
+    console.warn(`[${label}] TRUNCATED — hit the token ceiling. ${tokens}`);
+    return true;
+  }
+  console.log(`[${label}] finish_reason=${finishReason} ${tokens}`);
+  return false;
+}
+
 // Fix common double-encoded UTF-8 artifacts the LLM sometimes emits
 function fixEncodingArtifacts(html) {
   return html
@@ -246,11 +278,22 @@ router.post('/', requireAuth(), async (req, res) => {
         { role: 'user',   content: user }
       ],
       temperature: 0.5,
-      max_tokens: 2048,
+      max_tokens: TAILOR_MAX_TOKENS,
     });
 
+    const truncated = logCompletion('tailor', response);
     const result = response.choices[0].message.content;
-    res.json({ result });
+    const { tailoredCv, coverLetter } = splitTailorSections(result);
+
+    if (!coverLetter) {
+      console.warn(
+        `[tailor] no COVER LETTER section in the response${truncated ? ' (response was truncated)' : ''}`
+      );
+    }
+
+    // `result` is the raw two-section text, kept for backward compatibility.
+    // New callers should read tailoredCv/coverLetter and ignore it.
+    res.json({ result, tailoredCv, coverLetter, truncated });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Something went wrong with the AI call.' });
@@ -310,6 +353,10 @@ router.post('/style', requireAuth(), async (req, res) => {
       temperature: 0,
       max_tokens: 6000,
     });
+
+    // The doctype check below only inspects the start of the document, so a
+    // clipped HTML document would otherwise pass through and render broken.
+    logCompletion('style', response);
 
     let html = response.choices[0].message.content.trim();
     html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim();
