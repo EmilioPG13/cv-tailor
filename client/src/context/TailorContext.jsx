@@ -192,7 +192,17 @@ export function TailorProvider({ lang, t, children }) {
       getToken().then(tok =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { tailoredCv: parsed.tailoredCV, language: lang, cvStyle, templateFile: selectedTemplate },
+          // Both spellings: the client and server deploy independently, so a new
+          // client can briefly run against a server that only reads tailoredCV.
+          // The server prefers tailoredCv and ignores the duplicate. Drop the old
+          // key once the backend has been live on the new build for a while.
+          {
+            tailoredCv: parsed.tailoredCV,
+            tailoredCV: parsed.tailoredCV,
+            language: lang,
+            cvStyle,
+            templateFile: selectedTemplate,
+          },
           { headers: { Authorization: `Bearer ${tok}` } }
         )
       ).then(({ data: sd }) => {
@@ -210,7 +220,11 @@ export function TailorProvider({ lang, t, children }) {
         lang,
         fit:        parsed.fit,
         cv, jd,
+        // Both spellings, for the same reason as the style call above. This one
+        // matters more: the save is fire-and-forget, so against an old server a
+        // 400 here would silently stop history from being recorded at all.
         tailoredCv: parsed.tailoredCV,
+        tailoredCV: parsed.tailoredCV,
         cover:      parsed.cover,
       }, { headers })
         .then(() => setHistoryVersion(v => v + 1))
