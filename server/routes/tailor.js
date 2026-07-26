@@ -302,14 +302,17 @@ router.post('/', requireAuth(), async (req, res) => {
 
 router.post('/style', requireAuth(), async (req, res) => {
   const {
-    tailoredCV,
     language = 'en',
     cvStyle  = 'modern',
     templateFile,
   } = req.body;
 
+  // `tailoredCV` is the older spelling; still accepted so an existing client
+  // keeps working against a newer server.
+  const tailoredCV = req.body.tailoredCv ?? req.body.tailoredCV;
+
   if (!tailoredCV) {
-    return res.status(400).json({ error: 'tailoredCV is required.' });
+    return res.status(400).json({ error: 'tailoredCv is required.' });
   }
 
   const settings = await getSettings();

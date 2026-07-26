@@ -188,7 +188,7 @@ export function TailorProvider({ lang, t, children }) {
       getToken().then(tok =>
         axios.post(
           `${import.meta.env.VITE_API_URL}/api/tailor/style`,
-          { tailoredCV: parsed.tailoredCV, language: lang, cvStyle, templateFile: selectedTemplate },
+          { tailoredCv: parsed.tailoredCV, language: lang, cvStyle, templateFile: selectedTemplate },
           { headers: { Authorization: `Bearer ${tok}` } }
         )
       ).then(({ data: sd }) => {
@@ -206,7 +206,7 @@ export function TailorProvider({ lang, t, children }) {
         lang,
         fit:        parsed.fit,
         cv, jd,
-        tailoredCV: parsed.tailoredCV,
+        tailoredCv: parsed.tailoredCV,
         cover:      parsed.cover,
       }, { headers })
         .then(() => setHistoryVersion(v => v + 1))

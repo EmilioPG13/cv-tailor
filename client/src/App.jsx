@@ -697,6 +697,37 @@ function DesignView({ t, styledCV, styleStatus, styleError, dl }) {
 }
 
 /* ─────────────────────────────────────────────
+   TruncatedNotice — the model hit its token ceiling mid-generation
+───────────────────────────────────────────── */
+
+// Shown across every tab rather than per-tab: a truncated run loses the tail of
+// the CV *and* usually the whole cover letter, so an empty Cover tab would
+// otherwise read as "the model chose not to write one".
+function TruncatedNotice({ t, onRegenerate }) {
+  return (
+    <div
+      role="status"
+      className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 anim-fade"
+    >
+      <span className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400">
+        <IconBolt size={13} />
+      </span>
+      <div className="flex flex-1 flex-col gap-1 min-w-0">
+        <p className="text-[11.5px] font-medium text-amber-700 dark:text-amber-400">
+          {t.truncatedTitle}
+        </p>
+        <p className="text-[11px] leading-relaxed text-amber-600/80 dark:text-amber-400/70">
+          {t.truncatedBody}
+        </p>
+      </div>
+      <Button variant="outline" size="xs" onClick={onRegenerate} className="shrink-0 self-center">
+        <IconRefresh size={11} /> {t.regenerate}
+      </Button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    OutputCard
 ───────────────────────────────────────────── */
 
@@ -739,6 +770,9 @@ function OutputCard({ t, status, progress, result, tab, setTab, copy, copied, dl
       </CardHeader>
 
       <CardContent className={compact ? "pt-3" : "pt-4"}>
+        {hasResult && result.truncated && (
+          <TruncatedNotice t={t} onRegenerate={regenerate} />
+        )}
         {!hasResult && status !== "streaming" && <EmptyState t={t} />}
         {status === "streaming" && <StreamingView t={t} progress={progress} />}
         {hasResult && tab === "bullets" && (
