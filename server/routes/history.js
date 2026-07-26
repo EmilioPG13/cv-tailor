@@ -1,30 +1,34 @@
 import express from 'express';
 import { getAuth } from '@clerk/express';
 import { requireAuth } from '../lib/requireAuth.js';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '../lib/supabase.js';
 import { toHistoryEntry } from '../lib/historyEntry.js';
 
 const router = express.Router();
 
-let _supabase = null;
-function getSupabase() {
-  if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
-    }
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  }
-  return _supabase;
-}
+// Columns needed to render a list row. The heavy ones — cv, jd, tailored_cv,
+// cover — are several KB each and are only opened when a row is expanded.
+const SUMMARY_COLUMNS = 'id, role, company, lang, fit, created_at';
 
-// GET /api/history — user's entries, newest first
+const MAX_ENTRIES = 50;
+
+// GET /api/history — user's entries, newest first.
+// ?summary=1 omits the large text columns, for callers that only render a list.
+// ?limit=N caps the number of rows.
 router.get('/', requireAuth(), async (req, res) => {
+  const summary = req.query.summary === '1' || req.query.summary === 'true';
+
+  const requestedLimit = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+    ? Math.min(requestedLimit, MAX_ENTRIES)
+    : MAX_ENTRIES;
+
   const { data, error } = await getSupabase()
     .from('history')
-    .select('*')
+    .select(summary ? SUMMARY_COLUMNS : '*')
     .eq('user_id', getAuth(req).userId)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(limit);
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data.map(toHistoryEntry));

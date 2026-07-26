@@ -29,6 +29,13 @@ export function injectFitToPage(html) {
     }
     if (document.readyState === 'complete') fit();
     else window.addEventListener('load', fit);
+
+    // The preview iframe is sandboxed without allow-same-origin, so the parent
+    // cannot call contentWindow.print() on it — that throws cross-origin. It
+    // posts a message instead and we run the print here, inside the document.
+    window.addEventListener('message', function (e) {
+      if (e.data === 'cv-tailor:print') { fit(); window.print(); }
+    });
   })();
 <\/script>`;
   return html.includes('</body>')

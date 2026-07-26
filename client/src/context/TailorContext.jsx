@@ -45,8 +45,12 @@ function parseApiResult(data, lang) {
     bullets: bullets.length > 0 ? bullets : fallbackBullets.length > 0 ? fallbackBullets : [{ tag: 'REWRITTEN', text: tailoredCV || text, original: '', match: [] }],
     cover: coverText,
     tailoredCV,
-    fit: 88,
-    keywords: [],
+    // Both computed server-side. `fit` is null when the job description had too
+    // little distinctive vocabulary to score, and the gauge hides itself rather
+    // than showing a number that would mean nothing.
+    fit: typeof data.fit === 'number' ? data.fit : null,
+    keywords: Array.isArray(data.matchedKeywords) ? data.matchedKeywords : [],
+    missingKeywords: Array.isArray(data.missingKeywords) ? data.missingKeywords : [],
     truncated: data.truncated === true,
     lang,
   };

@@ -11,6 +11,11 @@ import templatesRoute from './routes/templates.js';
 
 const app = express();
 
+// Render (and most Node hosts) terminate TLS at a proxy, so without this every
+// request would report the load balancer's address and the IP-keyed rate limit
+// on /api/tailor/models would bucket all callers together.
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173'
 }));

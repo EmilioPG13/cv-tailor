@@ -1,13 +1,16 @@
 import express from 'express';
 import OpenAI from 'openai';
 import { requireAuth } from '../lib/requireAuth.js';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '../lib/supabase.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { settingsCache } from '../settingsCache.js';
 import { injectFitToPage } from '../lib/templateRender.js';
 import { splitTailorSections } from '../lib/tailorSections.js';
+import { rateLimit } from '../lib/rateLimit.js';
+import { computeFit } from '../lib/fitScore.js';
+import { getAuth } from '@clerk/express';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,17 +20,6 @@ const client = new OpenAI({
   apiKey: process.env.NVIDIA_API_KEY,
   baseURL: 'https://integrate.api.nvidia.com/v1'
 });
-
-let _supabase = null;
-function getSupabase() {
-  if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
-    }
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  }
-  return _supabase;
-}
 
 const TONE_INSTRUCTIONS = {
   en: {
@@ -234,6 +226,36 @@ const NVIDIA_MODELS_FALLBACK = [
   'microsoft/phi-4-mini-instruct',
 ].map(id => ({ id }));
 
+// Each of these fans out to a metered upstream call, so they are limited per
+// signed-in user. The limiters sit after requireAuth() so getAuth() has a userId
+// to key on. Ceilings are set well above real interactive use — a session is a
+// handful of runs — and are only meant to stop a loop from draining the quota.
+const perUser = req => getAuth(req).userId;
+
+const tailorLimit = rateLimit({
+  name: 'tailor', windowMs: 15 * 60 * 1000, max: 15, key: perUser,
+  message: 'Too many tailoring runs. Please wait a few minutes and try again.',
+});
+
+// Runs automatically after every tailor, so it must be at least as permissive,
+// plus headroom for restyling an existing result.
+const styleLimit = rateLimit({
+  name: 'style', windowMs: 15 * 60 * 1000, max: 25, key: perUser,
+  message: 'Too many design renders. Please wait a few minutes and try again.',
+});
+
+// Fires from a debounced watcher as the user types, so it is naturally chattier.
+const toneLimit = rateLimit({
+  name: 'tone', windowMs: 5 * 60 * 1000, max: 30, key: perUser,
+});
+
+// Unauthenticated and proxies a live upstream listing, so it is keyed by IP.
+// Behind a proxy this needs `app.set('trust proxy', 1)` for req.ip to be the
+// real client address rather than the load balancer's.
+const modelsLimit = rateLimit({
+  name: 'models', windowMs: 5 * 60 * 1000, max: 30, key: req => req.ip,
+});
+
 router.get('/info', async (req, res) => {
   try {
     const settings = await getSettings();
@@ -243,7 +265,7 @@ router.get('/info', async (req, res) => {
   }
 });
 
-router.get('/models', async (req, res) => {
+router.get('/models', modelsLimit, async (req, res) => {
   try {
     const seen = new Set();
     const models = [];
@@ -260,7 +282,7 @@ router.get('/models', async (req, res) => {
   }
 });
 
-router.post('/', requireAuth(), async (req, res) => {
+router.post('/', requireAuth(), tailorLimit, async (req, res) => {
   const { cv, jobDescription, language = 'en', tone = 'professional' } = req.body;
 
   if (!cv || !jobDescription) {
@@ -291,16 +313,24 @@ router.post('/', requireAuth(), async (req, res) => {
       );
     }
 
+    // Computed here rather than in the client so every consumer — and the row
+    // written to history — sees the same number. `fit` is null when the posting
+    // had too little distinctive vocabulary to score honestly.
+    const { fit, matchedKeywords, missingKeywords } = computeFit(jobDescription, tailoredCv);
+
     // `result` is the raw two-section text, kept for backward compatibility.
     // New callers should read tailoredCv/coverLetter and ignore it.
-    res.json({ result, tailoredCv, coverLetter, truncated });
+    res.json({
+      result, tailoredCv, coverLetter, truncated,
+      fit, matchedKeywords, missingKeywords,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Something went wrong with the AI call.' });
   }
 });
 
-router.post('/style', requireAuth(), async (req, res) => {
+router.post('/style', requireAuth(), styleLimit, async (req, res) => {
   const {
     language = 'en',
     cvStyle  = 'modern',
@@ -380,7 +410,7 @@ router.post('/style', requireAuth(), async (req, res) => {
 
 const VALID_TONES = ['professional', 'conversational', 'enthusiastic'];
 
-router.post('/detect-tone', requireAuth(), async (req, res) => {
+router.post('/detect-tone', requireAuth(), toneLimit, async (req, res) => {
   const { jobDescription, language = 'en' } = req.body;
 
   if (!jobDescription || typeof jobDescription !== 'string') {

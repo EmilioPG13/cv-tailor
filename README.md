@@ -19,6 +19,9 @@ You paste (or upload) your existing CV, paste a job description (or scrape it fr
 - [Database setup (Supabase)](#database-setup-supabase)
 - [Running locally](#running-locally)
 - [API reference](#api-reference)
+- [Fit score](#fit-score)
+- [Rate limits](#rate-limits)
+- [Tests](#tests)
 - [CV templates](#cv-templates)
 - [The fit-to-page engine](#the-fit-to-page-engine)
 - [Admin and analytics](#admin-and-analytics)
@@ -65,7 +68,7 @@ The tailor and design steps run as separate calls so the text result appears qui
 | Database | Supabase (PostgreSQL) |
 | Authentication | Clerk |
 | Web scraping | Firecrawl |
-| File parsing | pdf.js and mammoth.js (loaded in the browser via CDN) |
+| File parsing | pdf.js and mammoth.js (bundled, lazy-loaded on first upload) |
 | Hosting | Vercel (frontend) and a Node host such as Render (backend) |
 
 The AI provider is OpenAI-compatible, so the backend uses the official OpenAI SDK pointed at NVIDIA's base URL. The active models are configurable at runtime (see [Admin and analytics](#admin-and-analytics)).
@@ -77,7 +80,7 @@ The AI provider is OpenAI-compatible, so the backend uses the official OpenAI SD
 ```
 cv-tailor/
 ├── client/                      React + Vite frontend
-│   ├── index.html               Loads pdf.js and mammoth.js from CDN
+│   ├── index.html               App shell and font preconnects
 │   ├── src/
 │   │   ├── App.jsx              Main app shell, routing, and the Tailor page
 │   │   ├── main.jsx            Entry point; wires up Clerk and the router
@@ -102,6 +105,14 @@ cv-tailor/
 ├── server/                      Node + Express backend
 │   ├── index.js                 App entry; mounts routes and Clerk middleware
 │   ├── settingsCache.js         In-memory cache for runtime settings
+│   ├── lib/
+│   │   ├── supabase.js         Shared Supabase client
+│   │   ├── requireAuth.js      JSON 401 guard (Clerk's own guard redirects)
+│   │   ├── rateLimit.js        Per-caller sliding-window limiter
+│   │   ├── fitScore.js         Keyword-coverage scoring
+│   │   ├── tailorSections.js   Splits the model's two-section response
+│   │   ├── historyEntry.js     Maps history rows from DB to API shape
+│   │   └── templateRender.js   Fit-to-page injection and sample rendering
 │   ├── routes/
 │   │   ├── tailor.js           Tailor, style, tone-detection, and model info
 │   │   ├── history.js          Per-user saved CV history (CRUD)
@@ -150,7 +161,9 @@ cv-tailor/
 | `VITE_API_URL` | Yes | Base URL of the backend, e.g. `http://localhost:3001` |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key (same as the server's) |
 
-Never commit your `.env` files. They are already covered by `.gitignore`.
+Copy `server/.env.example` and `client/.env.example` to `.env` in their
+respective folders and fill them in. Never commit the real `.env` files — they
+are already covered by `.gitignore`.
 
 ---
 
@@ -222,6 +235,9 @@ do not have to scan the prose for headings:
   "tailoredCv": "Jane Doe\n• Led migration of the billing service…",
   "coverLetter": "Dear Hiring Manager,…",
   "truncated": false,
+  "fit": 72,
+  "matchedKeywords": ["typescript", "kubernetes", "postgresql"],
+  "missingKeywords": ["terraform", "graphql"],
   "result": "TAILORED CV\nJane Doe\n…\n\nCOVER LETTER\nDear Hiring Manager,…"
 }
 ```
@@ -230,13 +246,13 @@ do not have to scan the prose for headings:
 `tailoredCv` and `coverLetter`. `truncated` is `true` when the model hit its
 token ceiling mid-generation; in that case `tailoredCv` may end mid-sentence and
 `coverLetter` may be empty, so treat the run as a failure rather than a short
-answer.
+answer. See [Fit score](#fit-score) for what `fit` measures.
 
 ### History
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/history` | Returns the signed-in user's saved runs, newest first. |
+| `GET` | `/api/history` | Returns the signed-in user's saved runs, newest first. `?summary=1` omits the large text columns; `?limit=N` caps the row count (max 50). |
 | `POST` | `/api/history` | Saves a new run. Body: `role`, `tailoredCv`, and optionally `company`, `lang`, `fit`, `cv`, `jd`, `cover`. |
 | `DELETE` | `/api/history/:id` | Deletes one of the user's own runs. |
 
@@ -265,6 +281,66 @@ spelling is still accepted in request bodies on `/api/history` and
 | `GET` / `POST` / `PUT` / `DELETE` | `/api/admin/templates[/:id]` | Manage stored templates. |
 | `GET` | `/api/admin/settings` | Read all runtime settings. |
 | `PUT` | `/api/admin/settings/:key` | Update a setting and invalidate the server cache. |
+
+---
+
+## Fit score
+
+The percentage on the gauge is the **share of the job description's most
+distinctive terms that appear in your tailored CV**. It is computed locally in
+`server/lib/fitScore.js` — no model call, no cost, and the same inputs always
+produce the same number.
+
+How it works: the posting is tokenised, accents are stripped, and stopwords and
+recruiting boilerplate (`experience`, `team`, `role`, `requirements`, …) are
+discarded, since those appear in every posting and every CV and would inflate the
+result. The 20 most frequent remaining terms become the keyword set, and each is
+looked for in the tailored CV. Both sides are compared on conservative stems, so
+a posting asking you to "deploy" matches a CV that says "Deployed", and "APIs"
+matches "API". Irregular verbs (build/built) are not matched — a missed match
+understates the score, a wrong one inflates it, and understating is the safer
+error.
+
+It is a keyword-coverage measure, not a judgement of whether you suit the role.
+When a posting yields fewer than five distinctive terms there is not enough
+signal for a percentage to mean anything, so the API returns `fit: null` and the
+gauge hides itself rather than showing an invented figure.
+
+---
+
+## Rate limits
+
+Every tailoring endpoint fans out to a metered upstream, so each is limited per
+signed-in user. The ceilings sit well above normal interactive use and exist to
+stop a loop from draining the API allowance.
+
+| Endpoint | Limit |
+|---|---|
+| `POST /api/tailor` | 15 per 15 minutes |
+| `POST /api/tailor/style` | 25 per 15 minutes |
+| `POST /api/tailor/detect-tone` | 30 per 5 minutes |
+| `POST /api/scrape` | 20 per 15 minutes |
+| `GET /api/tailor/models` | 30 per 5 minutes, per IP (unauthenticated) |
+
+Exceeding one returns `429` with a `Retry-After` header. Counters live in process
+memory, which suits a single-instance deployment; if the backend is ever scaled
+to multiple nodes each would enforce its own allowance, so move the counters to a
+shared store before scaling out.
+
+---
+
+## Tests
+
+```bash
+cd server && npm test     # node:test
+cd client && npm test     # vitest
+```
+
+The server suite covers the response splitter, the fit score, the history field
+mapper, and the rate limiter, plus integration tests that drive the real routers
+through real express, the real Clerk `getAuth`, and the real Supabase client with
+only PostgREST stubbed. The client suite renders components to check that the
+truncation notice and matched-keyword list actually reach the screen.
 
 ---
 
