@@ -20,6 +20,7 @@ You paste (or upload) your existing CV, paste a job description (or scrape it fr
 - [Running locally](#running-locally)
 - [API reference](#api-reference)
 - [Fit score](#fit-score)
+- [Prompt settings](#prompt-settings)
 - [Rate limits](#rate-limits)
 - [Tests](#tests)
 - [CV templates](#cv-templates)
@@ -31,7 +32,7 @@ You paste (or upload) your existing CV, paste a job description (or scrape it fr
 
 ## What it does
 
-- **Tailors your CV to a job.** An AI model rewrites your bullet points toward the target role using strong action verbs, while preserving your real name, job titles, dates, and years of experience exactly. It will not invent seniority or experience you do not have.
+- **Tailors your CV to a job.** An AI model rewrites your bullet points toward the target role using strong action verbs, while preserving your real name, job titles, dates, and years of experience exactly. It will not invent seniority or experience you do not have, and it will not add numbers — metrics, percentages, and scale figures only appear if they were already in your CV.
 - **Writes a cover letter** in the same pass, matched to the role.
 - **Detects the right tone automatically.** As you type or paste a job description, the app analyzes the company culture and suggests one of three tones: Professional, Conversational, or Enthusiastic. You can accept the suggestion or override it.
 - **Works in English and Spanish.** Every prompt, label, and output has a localized version. Accented characters are preserved correctly throughout.
@@ -305,6 +306,29 @@ It is a keyword-coverage measure, not a judgement of whether you suit the role.
 When a posting yields fewer than five distinctive terms there is not enough
 signal for a percentage to mean anything, so the API returns `fit: null` and the
 gauge hides itself rather than showing an invented figure.
+
+---
+
+## Prompt settings
+
+The tailoring and design prompts live in two places, and **the database wins**.
+`server/routes/tailor.js` holds built-in defaults in `FALLBACK_SETTINGS`, but
+`getSettings()` overlays any matching row from the Supabase `app_settings` table
+on top of them. A stored `tailor_prompt_en` row therefore replaces the built-in
+English prompt entirely.
+
+This matters when changing prompt behaviour: **editing the code has no effect on
+a deployment whose `app_settings` already contains that key.** To change a prompt
+in production, either update the row through the admin UI (which invalidates the
+server's cache immediately), or delete the row so the built-in default applies
+again. The cache is otherwise refreshed every 5 minutes.
+
+The built-in prompts forbid inventing facts, including numbers: no metrics,
+percentages, counts or scale figures that are not already in the CV. That rule
+exists because the model was reproducibly fabricating the same plausible-looking
+figures — "500+ concurrent users", "98% reliability" — and the prompt used to
+explicitly allow it. `server/routes/tailorPrompt.test.js` guards the constraint
+in the built-in prompts; it cannot see a stored override.
 
 ---
 
