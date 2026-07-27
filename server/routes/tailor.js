@@ -34,7 +34,9 @@ const TONE_INSTRUCTIONS = {
   },
 };
 
-const FALLBACK_SETTINGS = {
+// Exported so the factual constraints in these prompts can be regression-tested.
+// Only used when `app_settings` has no row for a given key — a stored row wins.
+export const FALLBACK_SETTINGS = {
   llm_model:        'nvidia/llama-3.3-nemotron-super-49b-v1.5',
   design_model:     'deepseek-ai/deepseek-v4-flash',
   tailor_prompt_en: `You are an expert HR consultant and professional CV writer.
@@ -44,12 +46,13 @@ FACTUAL RULES (never violate):
 - Reproduce the candidate's NAME exactly — same spelling and accents, no added or removed words.
 - Never change job titles, employer/company names, dates, or the candidate's stated years of experience.
 - Do NOT invent seniority, roles, or experience the candidate does not have.
+- Never invent numbers. Do not add metrics, percentages, counts, or scale figures that are not already in the CV — no user or request volumes, uptime or reliability percentages, revenue, cost savings, or team sizes. If a bullet in the original has no number, the rewritten bullet has no number.
 
 REWRITE RULES:
 - Preserve ALL section headings exactly as they appear in the original CV.
 - Keep the same bullet symbol the user uses (•, -, *).
 - Only update the wording — do not add or remove sections.
-- Rephrase bullets toward the job description using strong action verbs; quantifying achievements with reasonable metrics is allowed.
+- Rephrase bullets toward the job description using strong action verbs.
 - {{tone}}
 
 BE CONCISE — the result must fit on ONE page:
@@ -72,12 +75,13 @@ REGLAS DE VERACIDAD (nunca las incumplas):
 - Reproduce el NOMBRE del candidato exactamente — misma ortografía y acentos, sin añadir ni quitar palabras.
 - Nunca cambies los títulos de puesto, nombres de empresa, fechas ni los años de experiencia declarados.
 - NO inventes seniority, puestos ni experiencia que el candidato no tenga.
+- Nunca inventes cifras. No añadas métricas, porcentajes, cantidades ni magnitudes que no estén ya en el CV — ni volúmenes de usuarios o peticiones, ni porcentajes de disponibilidad o fiabilidad, ni ingresos, ahorros o tamaños de equipo. Si una viñeta del original no tiene ningún número, la viñeta reescrita tampoco lo tiene.
 
 REGLAS DE REDACCIÓN:
 - Conserva EXACTAMENTE los mismos títulos de sección que aparecen en el CV original.
 - Mantén el mismo símbolo de viñeta que usa el usuario (•, -, *).
 - Solo actualiza el contenido — no añadas ni elimines secciones.
-- Reescribe las viñetas hacia la descripción del puesto con verbos de acción; se permite cuantificar logros con métricas razonables.
+- Reescribe las viñetas hacia la descripción del puesto con verbos de acción.
 - {{tone}}
 
 SÉ CONCISO — el resultado debe caber en UNA página:
