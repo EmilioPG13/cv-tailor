@@ -10,6 +10,7 @@ import { injectFitToPage } from '../lib/templateRender.js';
 import { splitTailorSections } from '../lib/tailorSections.js';
 import { rateLimit } from '../lib/rateLimit.js';
 import { computeFit } from '../lib/fitScore.js';
+import { findInventedNumbers } from '../lib/inventedNumbers.js';
 import { getAuth } from '@clerk/express';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -307,9 +308,64 @@ router.post('/', requireAuth(), tailorLimit, async (req, res) => {
       max_tokens: TAILOR_MAX_TOKENS,
     });
 
-    const truncated = logCompletion('tailor', response);
-    const result = response.choices[0].message.content;
-    const { tailoredCv, coverLetter } = splitTailorSections(result);
+    let truncated = logCompletion('tailor', response);
+    let result = response.choices[0].message.content;
+    let { tailoredCv, coverLetter } = splitTailorSections(result);
+
+    // The prompt forbids inventing figures and the model usually listens, but
+    // "500+ concurrent users" came back on a CV with no metrics in it across
+    // separate runs. Detection is deterministic, so the retry can name the
+    // exact offending figures instead of repeating the rule and hoping.
+    //
+    // Deleting the numbers here instead would leave "supporting concurrent
+    // users" — regenerating keeps the sentence a sentence. One retry only: if
+    // the model insists, the figures are reported so the caller can refuse.
+    let invented = findInventedNumbers(cv, `${tailoredCv}\n${coverLetter}`);
+
+    if (invented.length > 0) {
+      console.warn(
+        `[tailor] invented ${invented.length} figure(s): ${invented.map((f) => f.value).join(', ')} — retrying`
+      );
+
+      const retry = await client.chat.completions.create({
+        model: settings.llm_model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+          { role: 'assistant', content: result },
+          {
+            role: 'user',
+            content:
+              (language === 'es'
+                ? 'Estas cifras no aparecen en el CV original: '
+                : 'These figures do not appear in the original CV: ') +
+              invented.map((f) => f.value).join(', ') +
+              (language === 'es'
+                ? '. Reescribe la respuesta completa eliminándolas. Reformula cada frase afectada para que siga siendo natural sin ninguna cifra. No añadas cifras nuevas. Mantén el resto del texto igual y conserva las mismas secciones.'
+                : '. Rewrite the full response with them removed. Reword each affected sentence so it still reads naturally without any figure. Do not add new ones. Keep everything else as it was, with the same sections.'),
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: TAILOR_MAX_TOKENS,
+      });
+
+      const retryTruncated = logCompletion('tailor:retry', retry);
+      const retryResult = retry.choices[0].message.content;
+      const retrySections = splitTailorSections(retryResult);
+      const stillInvented = findInventedNumbers(
+        cv,
+        `${retrySections.tailoredCv}\n${retrySections.coverLetter}`
+      );
+
+      // Only take the retry if it is actually better and still well-formed —
+      // a truncated or empty second pass is worse than the first answer.
+      if (retrySections.tailoredCv && stillInvented.length < invented.length) {
+        ({ tailoredCv, coverLetter } = retrySections);
+        result = retryResult;
+        truncated = retryTruncated;
+        invented = stillInvented;
+      }
+    }
 
     if (!coverLetter) {
       console.warn(
@@ -324,9 +380,13 @@ router.post('/', requireAuth(), tailorLimit, async (req, res) => {
 
     // `result` is the raw two-section text, kept for backward compatibility.
     // New callers should read tailoredCv/coverLetter and ignore it.
+    // `invented` is normally empty. When it is not, the retry failed to clear
+    // the figures and the caller is being told so rather than shown a clean
+    // response — a downstream verifier should not have to rediscover this.
     res.json({
       result, tailoredCv, coverLetter, truncated,
       fit, matchedKeywords, missingKeywords,
+      inventedNumbers: invented,
     });
   } catch (error) {
     console.error(error);
