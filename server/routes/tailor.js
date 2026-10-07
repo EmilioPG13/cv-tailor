@@ -38,8 +38,8 @@ const TONE_INSTRUCTIONS = {
 // Exported so the factual constraints in these prompts can be regression-tested.
 // Only used when `app_settings` has no row for a given key — a stored row wins.
 export const FALLBACK_SETTINGS = {
-  llm_model:        'google/gemma-4-31b-it',
-  design_model:     'google/gemma-4-31b-it',
+  llm_model:        'moonshotai/kimi-k3',
+  design_model:     'moonshotai/kimi-k3',
   tailor_prompt_en: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
 
@@ -221,13 +221,13 @@ function fixEncodingArtifacts(html) {
 // a model starts failing. Several are reasoning models: with the small
 // max_tokens used by /detect-tone they may return empty content.
 const NVIDIA_MODELS_FALLBACK = [
+  'moonshotai/kimi-k3',
   'google/gemma-4-31b-it',
   'nvidia/nemotron-3-super-120b-a12b',
   'nvidia/nemotron-3-ultra-550b-a55b',
   'nvidia/nemotron-3.5-lightning-30b-a3b',
   'openai/gpt-oss-20b',
   'z-ai/glm-5.3',
-  'moonshotai/kimi-k3',
 ].map(id => ({ id }));
 
 // Each of these fans out to a metered upstream call, so they are limited per
