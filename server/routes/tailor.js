@@ -38,8 +38,8 @@ const TONE_INSTRUCTIONS = {
 // Exported so the factual constraints in these prompts can be regression-tested.
 // Only used when `app_settings` has no row for a given key — a stored row wins.
 export const FALLBACK_SETTINGS = {
-  llm_model:        'nvidia/llama-3.3-nemotron-super-49b-v1.5',
-  design_model:     'deepseek-ai/deepseek-v4-flash',
+  llm_model:        'google/gemma-4-31b-it',
+  design_model:     'google/gemma-4-31b-it',
   tailor_prompt_en: `You are an expert HR consultant and professional CV writer.
 Your task is to tailor the user's CV to the provided job description.
 
@@ -214,21 +214,20 @@ function fixEncodingArtifacts(html) {
     .replace(/Â·/g, '·').replace(/Â /g, ' ');
 }
 
+// Models that answered a chat call on 2026-10-07. NVIDIA's /models listing also
+// includes retired models (kimi-k2.6, llama-3.3-70b and others list fine but
+// return 404/410 on use), so the dropdown only offers entries from this list
+// that are still listed upstream. Re-probe with docs/check-nim-models.ps1 when
+// a model starts failing. Several are reasoning models: with the small
+// max_tokens used by /detect-tone they may return empty content.
 const NVIDIA_MODELS_FALLBACK = [
-  'nvidia/llama-3.3-nemotron-super-49b-v1.5',
-  'deepseek-ai/deepseek-v4-flash',
-  'nvidia/llama-3.1-nemotron-70b-instruct',
-  'deepseek-ai/deepseek-v4-pro',
-  'meta/llama-3.3-70b-instruct',
-  'meta/llama-4-maverick-17b-128e-instruct',
-  'meta/llama-3.1-70b-instruct',
-  'meta/llama-3.1-8b-instruct',
-  'mistralai/mistral-large-2-instruct',
-  'mistralai/mixtral-8x7b-instruct-v0.1',
-  'mistralai/mistral-7b-instruct-v0.3',
-  'qwen/qwen3.5-397b-a17b',
-  'google/gemma-3-12b-it',
-  'microsoft/phi-4-mini-instruct',
+  'google/gemma-4-31b-it',
+  'nvidia/nemotron-3-super-120b-a12b',
+  'nvidia/nemotron-3-ultra-550b-a55b',
+  'nvidia/nemotron-3.5-lightning-30b-a3b',
+  'openai/gpt-oss-20b',
+  'z-ai/glm-5.3',
+  'moonshotai/kimi-k3',
 ].map(id => ({ id }));
 
 // Each of these fans out to a metered upstream call, so they are limited per
@@ -272,14 +271,9 @@ router.get('/info', async (req, res) => {
 
 router.get('/models', modelsLimit, async (req, res) => {
   try {
-    const seen = new Set();
-    const models = [];
-    for await (const model of client.models.list()) {
-      if (!model.id.includes('embed') && !model.id.includes('rerank') && !seen.has(model.id)) {
-        seen.add(model.id);
-        models.push({ id: model.id });
-      }
-    }
+    const listed = new Set();
+    for await (const model of client.models.list()) listed.add(model.id);
+    const models = NVIDIA_MODELS_FALLBACK.filter(m => listed.has(m.id));
     res.json({ models: models.length > 0 ? models : NVIDIA_MODELS_FALLBACK });
   } catch (error) {
     console.error('Models fetch error:', error.message);
