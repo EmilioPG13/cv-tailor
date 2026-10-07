@@ -125,8 +125,7 @@ cv-tailor/
 │   └── templates/               16 HTML CV templates (4 styles x 4 variants)
 │
 ├── start.bat                    Start both servers on Windows
-├── start.sh                     Start both servers on macOS / Linux
-└── setUp-plan.md                Original project plan (historical)
+└── start.sh                     Start both servers on macOS / Linux
 ```
 
 ---
