@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 import {
-  cn, Card, CardHeader, CardTitle, CardContent,
-  Button, IconBolt, IconSettings,
+  Card, CardHeader, CardTitle, CardContent,
+  Button, EmptyNote, PageHeader,
 } from '../components/ui.jsx';
 
 const API = import.meta.env.VITE_API_URL;
@@ -114,9 +114,9 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 anim-rise">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 rounded-2xl anim-shimmer" />)}
+      <main className="mx-auto max-w-[1240px] px-5 pb-24 pt-8 sm:px-8">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[1, 2, 3].map(i => <div key={i} className="anim-shimmer h-24 rounded-[3px]" />)}
         </div>
       </main>
     );
@@ -124,68 +124,61 @@ export default function AdminPage() {
 
   if (forbidden) {
     return (
-      <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6 flex flex-col items-center gap-4 py-24 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] text-[var(--muted-fg)]">
-          <IconSettings size={22} />
+      <main className="mx-auto max-w-[1240px] px-5 pb-24 pt-8 sm:px-8">
+        <div className="mx-auto mt-10 max-w-md">
+          <EmptyNote title="Access denied." body="Admin privileges required." />
         </div>
-        <p className="text-sm font-medium text-[var(--fg)]">Access denied.</p>
-        <p className="text-xs text-[var(--muted-fg)]">Admin privileges required.</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
-      {/* Hero */}
-      <section className="anim-rise">
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--accent)]"><IconBolt size={20} /></span>
-          <h1 className="text-[22px] font-bold tracking-tight text-[var(--fg)] sm:text-[28px]">Admin</h1>
-        </div>
-        <p className="mt-1 text-sm text-[var(--muted-fg)] max-w-xl leading-relaxed">
-          Platform overview, model configuration, and CV template management.
-        </p>
-      </section>
+    <main className="mx-auto max-w-[1240px] px-5 pb-24 pt-8 sm:px-8">
+      <PageHeader
+        title="Admin"
+        subtitle="Platform overview, model configuration, and CV template management."
+      />
 
-      {/* Stats */}
+      {/* Totals: one ruled summary, not a row of metric cards */}
       {stats && (
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 anim-rise-1">
+        <dl className="sheet anim-rise-1 mt-7 divide-y divide-dashed divide-[var(--rule)]">
           {[
-            { label: 'Total CVs',     value: stats.totalCVs ?? 0,     sub: 'Tailored all time' },
-            { label: 'Unique Users',  value: stats.uniqueUsers ?? 0,  sub: 'Accounts with history' },
+            { label: 'Total CVs',     value: stats.totalCVs ?? 0,       sub: 'Tailored all time' },
+            { label: 'Unique Users',  value: stats.uniqueUsers ?? 0,    sub: 'Accounts with history' },
             { label: 'Templates',     value: stats.totalTemplates ?? 0, sub: 'CV templates saved' },
           ].map(({ label, value, sub }) => (
-            <Card key={label}>
-              <CardContent className="pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-fg)]">{label}</p>
-                <p className="mt-2 text-[36px] font-bold tabular-nums text-[var(--fg)]">{value}</p>
-                <p className="text-xs text-[var(--muted-fg)]">{sub}</p>
-              </CardContent>
-            </Card>
+            <div key={label} className="flex items-baseline justify-between gap-4 px-5 py-3">
+              <dt className="min-w-0">
+                <span className="label">{label}</span>
+                <span className="ml-3 text-[13px] text-[var(--muted-fg)]">{sub}</span>
+              </dt>
+              <dd className="font-[family-name:var(--font-typed)] text-[18px] font-bold tabular-nums text-[var(--typed)]">{value}</dd>
+            </div>
           ))}
-        </div>
+        </dl>
       )}
 
       {/* ── Models ── */}
-      <div className="mt-8 anim-rise-1">
+      <div className="anim-rise-1 mt-8">
         <Card>
-          <CardHeader>
+          <CardHeader className="border-b border-[var(--rule)] pb-3">
             <CardTitle>Models</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 flex flex-col gap-5">
+          <CardContent className="flex flex-col gap-6 pt-5">
             {[
               { key: 'llm_model',    label: 'Tailoring model (LLM)', hint: 'Used for CV + cover letter generation.' },
               { key: 'design_model', label: 'Design model',          hint: 'Used for HTML CV rendering. Vision model is always used when a PDF is uploaded.' },
             ].map(({ key, label, hint }) => (
               <div key={key} className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-[var(--fg)]">{label}</label>
-                <p className="text-[11px] text-[var(--muted-fg)]">{hint}</p>
+                <label htmlFor={`sel-${key}`} className="text-[13px] font-semibold text-[var(--fg)]">{label}</label>
+                <p className="text-[12.5px] text-[var(--muted-fg)]">{hint}</p>
                 <div className="flex items-center gap-2">
                   <select
+                    id={`sel-${key}`}
                     value={settings[key] ?? ''}
                     onChange={e => setSettings(s => ({ ...s, [key]: e.target.value }))}
                     disabled={modelsLoading}
-                    className="flex-1 rounded-md border border-[var(--border)] bg-[var(--muted)] px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] disabled:opacity-50"
+                    className="field w-full flex-1 disabled:opacity-50"
                   >
                     {modelsLoading
                       ? <option>Loading models…</option>
@@ -196,7 +189,7 @@ export default function AdminPage() {
                     }
                   </select>
                   <Button
-                    size="sm"
+                    size="default"
                     disabled={savingKey === key}
                     onClick={() => saveSetting(key, settings[key])}
                     className="shrink-0"
@@ -211,14 +204,14 @@ export default function AdminPage() {
       </div>
 
       {/* ── System Prompts ── */}
-      <div className="mt-6 anim-rise-1">
+      <div className="anim-rise-1 mt-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="border-b border-[var(--rule)] pb-3">
             <CardTitle>System Prompts</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 flex flex-col gap-6">
-            <p className="text-[11px] text-[var(--muted-fg)]">
-              Use <code className="bg-[var(--muted)] px-1 rounded">{'{{tone}}'}</code> as a placeholder in tailor prompts — it is replaced at runtime with the selected tone instruction.
+          <CardContent className="flex flex-col gap-7 pt-5">
+            <p className="text-[13px] text-[var(--muted-fg)]">
+              Use <code className="rounded-[2px] bg-[var(--muted)] px-1 font-[family-name:var(--font-typed)]">{'{{tone}}'}</code> as a placeholder in tailor prompts — it is replaced at runtime with the selected tone instruction.
             </p>
             {[
               { key: 'tailor_prompt_en', label: 'Tailor prompt — English' },
@@ -226,11 +219,11 @@ export default function AdminPage() {
               { key: 'style_prompt_en',  label: 'Design prompt — English' },
               { key: 'style_prompt_es',  label: 'Design prompt — Spanish' },
             ].map(({ key, label }) => (
-              <div key={key} className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-[var(--fg)]">{label}</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[var(--muted-fg)] tabular-nums">
+              <div key={key} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor={`ta-${key}`} className="text-[13px] font-semibold text-[var(--fg)]">{label}</label>
+                  <div className="flex items-center gap-3">
+                    <span className="font-[family-name:var(--font-typed)] text-[12px] tabular-nums text-[var(--muted-fg)]">
                       {(settings[key] ?? '').length.toLocaleString()} chars
                     </span>
                     <Button
@@ -243,10 +236,11 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <textarea
+                  id={`ta-${key}`}
                   rows={8}
                   value={settings[key] ?? ''}
                   onChange={e => setSettings(s => ({ ...s, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-[12px] font-mono text-[var(--fg)] placeholder:text-[var(--muted-fg)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-y"
+                  className="field w-full resize-y text-[13px] leading-relaxed"
                   spellCheck={false}
                 />
               </div>
@@ -256,36 +250,38 @@ export default function AdminPage() {
       </div>
 
       {/* ── CV Templates ── */}
-      <div className="mt-6 anim-rise-1">
+      <div className="anim-rise-1 mt-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="border-b border-[var(--rule)] pb-3">
+            <div className="flex items-center justify-between gap-3">
               <CardTitle>CV Templates</CardTitle>
               {!showForm && (
                 <Button size="sm" onClick={startCreate}>+ New Template</Button>
               )}
             </div>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="pt-4">
             {showForm && (
-              <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--muted)] p-4 flex flex-col gap-3">
-                <p className="text-xs font-semibold text-[var(--fg)]">
+              <div className="mb-5 flex flex-col gap-3 rounded-[2px] border border-dashed border-[var(--rule)] bg-[var(--muted)] p-4">
+                <p className="label">
                   {editingId ? 'Edit template' : 'New template'}
                 </p>
                 <input
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] placeholder:text-[var(--muted-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                  aria-label="Template name"
+                  className="field w-full"
                   placeholder="Template name"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 />
                 <textarea
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] placeholder:text-[var(--muted-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
+                  aria-label="Template content"
+                  className="field w-full resize-none leading-relaxed"
                   placeholder="Template content…"
                   rows={6}
                   value={form.content}
                   onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                 />
-                <div className="flex gap-2 justify-end">
+                <div className="flex justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={cancelForm} disabled={saving}>Cancel</Button>
                   <Button size="sm" onClick={saveTemplate} disabled={saving || !form.name.trim() || !form.content.trim()}>
                     {saving ? 'Saving…' : 'Save'}
@@ -295,21 +291,21 @@ export default function AdminPage() {
             )}
 
             {templates.length === 0 && !showForm ? (
-              <p className="py-8 text-center text-sm text-[var(--muted-fg)]">No templates yet. Create one above.</p>
+              <EmptyNote title="No templates yet." body="Create one with the New Template button above." />
             ) : (
-              <ul className="flex flex-col divide-y divide-[var(--border)]">
+              <ul className="flex flex-col divide-y divide-dashed divide-[var(--rule)]">
                 {templates.map(tpl => (
-                  <li key={tpl.id} className="flex items-start justify-between gap-4 py-3">
+                  <li key={tpl.id} className="flex items-start justify-between gap-4 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium text-[var(--fg)] truncate">{tpl.name}</p>
-                      <p className="mt-0.5 text-[12px] text-[var(--muted-fg)] line-clamp-2">{tpl.content}</p>
+                      <p className="truncate text-[14px] font-semibold text-[var(--fg)]">{tpl.name}</p>
+                      <p className="mt-0.5 line-clamp-2 text-[13px] text-[var(--muted-fg)]">{tpl.content}</p>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="outline" size="sm" onClick={() => startEdit(tpl)} className="text-xs">Edit</Button>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => startEdit(tpl)}>Edit</Button>
                       <Button
                         variant="outline" size="sm"
                         onClick={() => deleteTemplate(tpl.id)}
-                        className={cn("text-xs text-red-500 hover:text-red-600 border-red-200 hover:border-red-300")}
+                        className="border-[var(--serial)] text-[var(--serial)]"
                       >
                         Delete
                       </Button>

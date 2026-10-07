@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T00:00:00Z",
+  "title": "Design System: CV Tailor",
+  "extensions": {
+    "colorMeta": {
+      "desk": { "role": "neutral", "displayName": "Cool Grey Desk", "canonical": "#d8dce2", "tonalRamp": ["#2a2e36", "#3f4552", "#5b6272", "#7d8596", "#9fa6b4", "#bcc1cc", "#d8dce2", "#eef0f3"] },
+      "sheet": { "role": "neutral", "displayName": "White Copy Stock", "canonical": "#f8f9fa", "tonalRamp": ["#2b2d30", "#45484c", "#66696e", "#8a8d92", "#adb0b5", "#cdd0d4", "#e6e8eb", "#f8f9fa"] },
+      "printed-ink": { "role": "neutral", "displayName": "Printed Black Ink", "canonical": "#171a21", "tonalRamp": ["#171a21", "#2c3039", "#434856", "#5c6274", "#7b8195", "#9ea3b4", "#c2c6d2", "#e4e6ec"] },
+      "carbon-blue": { "role": "primary", "displayName": "Carbon Blue", "canonical": "#1f2f8f", "tonalRamp": ["#0f1747", "#16226b", "#1f2f8f", "#3547b3", "#5d6dcc", "#8a96dd", "#b8c0ec", "#e0e4f7"] },
+      "serial-red": { "role": "secondary", "displayName": "Serial Red", "canonical": "#c42b1c", "tonalRamp": ["#4a0f09", "#74160e", "#9c1f14", "#c42b1c", "#dc5648", "#e98a7f", "#f3b9b2", "#fae0dd"] },
+      "canary": { "role": "tertiary", "displayName": "Canary Copy", "canonical": "#f6e78f", "tonalRamp": ["#4d4410", "#7a6c1a", "#a8942a", "#d0bb48", "#f6e78f", "#f9eeb0", "#fbf4cd", "#fdfae8"] },
+      "rose": { "role": "tertiary", "displayName": "Rose Copy", "canonical": "#f4c1ca", "tonalRamp": ["#4a1f28", "#7a3544", "#a64d60", "#cf7388", "#e898a8", "#f4c1ca", "#f9dce1", "#fcf0f2"] },
+      "sky": { "role": "tertiary", "displayName": "Sky Copy", "canonical": "#c4daf0", "tonalRamp": ["#1b3550", "#2b537d", "#4376aa", "#6a9bcb", "#96bbe0", "#c4daf0", "#dceaf6", "#f0f6fb"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Form Title", "purpose": "Page title, always with the double rule beneath." },
+      "body": { "displayName": "Printed Text", "purpose": "Taglines and descriptions in muted ink." },
+      "control": { "displayName": "Control", "purpose": "Buttons, choices, tabs." },
+      "label": { "displayName": "Printed Field Caption", "purpose": "Uppercase caption of a field or sheet." },
+      "typed": { "displayName": "Typed Content", "purpose": "Applicant input, serials, counts; Courier Prime, tabular figures." },
+      "stamp-figure": { "displayName": "Stamp Figure", "purpose": "Fit percentage inside the stamp." }
+    },
+    "shadows": [
+      { "name": "sheet-shadow", "value": "0 1px 2px rgba(18, 22, 36, 0.12), 0 16px 28px -20px rgba(18, 22, 36, 0.4)", "purpose": "Resting sheets and copy sheets." },
+      { "name": "sheet-shadow-dark", "value": "0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 28px -20px rgba(0, 0, 0, 0.8)", "purpose": "Same, in the carbon theme." },
+      { "name": "sheet-stack", "value": "::before canary translate(5px,-5px), ::after rose translate(10px,-10px), 1px strong rule", "purpose": "Flat copies peeking out behind an input form." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Rise, result, bullet, stamp-in, progress fill (160-260ms)." },
+      { "name": "state-transition", "value": "150ms ease", "purpose": "Buttons, fields, tabs; press nudges 1px down in 120ms." },
+      { "name": "ink-blink", "value": "1s steps(2, end) infinite", "purpose": "Streaming square dot." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "coarse-pointer", "value": "(pointer: coarse)" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single TAILOR action in carbon-blue.",
+      "html": "<button class=\"ds-btn-primary\">Tailor</button>",
+      "css": ".ds-btn-primary { height: 36px; padding: 0 16px; border: 0; border-radius: 2px; background: #1f2f8f; color: #f8f9fa; font: 600 13px 'Public Sans', sans-serif; letter-spacing: 0.01em; cursor: pointer; transition: background-color 150ms ease, transform 120ms ease; } .ds-btn-primary:hover { background: color-mix(in oklab, #1f2f8f 88%, #171a21); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid #1f2f8f; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action on a sheet.",
+      "html": "<button class=\"ds-btn-outline\">Sign in</button>",
+      "css": ".ds-btn-outline { height: 32px; padding: 0 12px; border: 1px solid #8a92a5; border-radius: 2px; background: #f8f9fa; color: #171a21; font: 600 12px 'Public Sans', sans-serif; cursor: pointer; transition: background-color 150ms ease; } .ds-btn-outline:hover { background: #eceef2; } .ds-btn-outline:focus-visible { outline: 2px solid #1f2f8f; outline-offset: 2px; }"
+    },
+    {
+      "name": "Boxed Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Single-line typed field with a printed caption.",
+      "html": "<label class=\"ds-label\">Job title<input class=\"ds-field\" placeholder=\"Backend engineer\"></label>",
+      "css": ".ds-label { display: flex; flex-direction: column; gap: 6px; font: 700 11.5px 'Public Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #171a21; } .ds-field { background: #f8f9fa; color: #1f2f8f; border: 1px solid #8a92a5; border-radius: 2px; padding: 8px 12px; font: 400 14px 'Courier Prime', 'Courier New', monospace; text-transform: none; letter-spacing: 0; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-field::placeholder { color: #474e60; } .ds-field:focus-visible { outline: none; border-color: #1f2f8f; box-shadow: 0 0 0 1px #1f2f8f; }"
+    },
+    {
+      "name": "Typing Area",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Textarea whose text sits on printed 24px rules.",
+      "html": "<textarea class=\"ds-typing\" rows=\"4\">Senior engineer, 6 years of Node and React.</textarea>",
+      "css": ".ds-typing { display: block; width: 100%; resize: none; border: 0; outline: none; background-color: transparent; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(23,26,33,0.13) 23px, rgba(23,26,33,0.13) 24px); background-attachment: local; background-position: 0 4px; color: #1f2f8f; font: 400 14px/24px 'Courier Prime', 'Courier New', monospace; padding: 4px 0 0; }"
+    },
+    {
+      "name": "Sheet with Stack",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "Input form on white stock with canary and rose copies peeking out behind.",
+      "html": "<div class=\"ds-stack\"><section class=\"ds-sheet\"><h3 class=\"ds-cap\">Your CV</h3><p>Paste it here.</p></section></div>",
+      "css": ".ds-stack { position: relative; isolation: isolate; margin: 10px 10px 0 0; } .ds-stack::before, .ds-stack::after { content: ''; position: absolute; inset: 0; z-index: -1; border: 1px solid #8a92a5; border-radius: 3px; } .ds-stack::before { background: #f6e78f; transform: translate(5px, -5px); } .ds-stack::after { background: #f4c1ca; transform: translate(10px, -10px); z-index: -2; } .ds-sheet { background: #f8f9fa; border: 1px solid #8a92a5; border-radius: 3px; box-shadow: 0 1px 2px rgba(18,22,36,0.12), 0 16px 28px -20px rgba(18,22,36,0.4); padding: 16px 20px; color: #171a21; font: 14px 'Public Sans', sans-serif; } .ds-cap { margin: 0 0 8px; font: 700 11.5px 'Public Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Choice Check Box",
+      "kind": "chip",
+      "refersTo": "choice-selected",
+      "description": "Printed radio check box for style and tone.",
+      "html": "<button class=\"ds-choice\" role=\"radio\" aria-checked=\"true\"><span class=\"ds-box\">&#10003;</span><span>Modern</span></button>",
+      "css": ".ds-choice { display: flex; align-items: flex-start; gap: 10px; min-height: 40px; padding: 8px 12px; border: 1px solid #1f2f8f; border-radius: 2px; background: color-mix(in oklab, #1f2f8f 8%, #f8f9fa); color: #171a21; font: 600 13px 'Public Sans', sans-serif; text-align: left; cursor: pointer; } .ds-choice:hover { background: #eceef2; } .ds-choice:focus-visible { outline: 2px solid #1f2f8f; outline-offset: 2px; } .ds-box { margin-top: 3px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #1f2f8f; border-radius: 2px; background: #1f2f8f; color: #f8f9fa; font-size: 10px; }"
+    },
+    {
+      "name": "Fit Stamp",
+      "kind": "custom",
+      "refersTo": "colors.serial-red",
+      "description": "Rubber stamp for keyword coverage; red double rule, tilted.",
+      "html": "<div class=\"ds-stamp\"><span class=\"ds-stamp-l\">FIT</span><span class=\"ds-stamp-n\">72%</span></div>",
+      "css": ".ds-stamp { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 12px 5px; color: #c42b1c; background: #f8f9fa; border: 2px solid #c42b1c; outline: 1px solid #c42b1c; outline-offset: 2px; border-radius: 2px; transform: rotate(-3deg); line-height: 1; text-transform: uppercase; font-family: 'Public Sans', sans-serif; } .ds-stamp-l { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; } .ds-stamp-n { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Output Tabs and Copy Sheet",
+      "kind": "nav",
+      "refersTo": "copy-sheet-cover",
+      "description": "Each tab is a sheet edge in the same stock as its copy.",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab\" aria-selected=\"true\">Cover letter</button><button class=\"ds-tab ds-tab-raw\">Raw</button></div><div class=\"ds-copy\">Dear hiring team,</div>",
+      "css": ".ds-tabs { display: flex; gap: 2px; } .ds-tab { position: relative; top: 0; margin-bottom: -1px; padding: 8px 16px; background: #f6e78f; color: #171a21; border: 1px solid #8a92a5; border-bottom-color: #f6e78f; border-radius: 3px 3px 0 0; font: 600 13px 'Public Sans', sans-serif; z-index: 1; cursor: pointer; } .ds-tab-raw { background: #f4c1ca; color: #474e60; top: 3px; border-bottom-color: #8a92a5; z-index: 0; } .ds-tab-raw:hover { color: #171a21; top: 1px; } .ds-copy { background: #f6e78f; border: 1px solid #8a92a5; border-radius: 0 3px 3px 3px; box-shadow: 0 1px 2px rgba(18,22,36,0.12), 0 16px 28px -20px rgba(18,22,36,0.4); padding: 16px 20px; color: #171a21; font: 14px 'Public Sans', sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Triplicate Pad",
+    "overview": "One application, written once, struck through to every copy. Every surface is either a ruled form (white stock with printed labels and typing lines) or a flat copy sheet of coloured stock, lying on a quiet cool-grey desk. The tool reads as paperwork you fill in and tear off, not as a dashboard or chat window. Documents are the product, so the CV and letter look like documents.\n\nThree inks carry meaning. Printed black ink is for labels and structure. Carbon-blue is for what the applicant typed and for the single primary action. Serial red appears only on serial numbers, the fit stamp, the streaming ink dot and the \"suggested\" tag. The dark theme is carbon copy: charcoal sheets, dimmed stock tints, chalk-blue ink.\n\nDensity is moderate and task-first: paste, run, copy. Layouts survive Spanish copy lengths. Motion is short and ink-like (rise, stamp-in, stepped blink); reduced motion collapses it.",
+    "keyCharacteristics": [
+      "Flat stock fields own whole regions; colour is paper, not gradient.",
+      "2-3px corners, 1px ink rules, perforation dashes, ruled typing lines.",
+      "Two faces: Public Sans prints, Courier Prime types.",
+      "Output tabs are sheet edges; each tab and its sheet share one stock colour.",
+      "Light and dark are both first-class."
+    ],
+    "rules": [
+      { "name": "The Three Inks Rule", "body": "Black prints, blue is typed, red is serial. Red never decorates; blue never labels.", "section": "colors" },
+      { "name": "The Stock Rule", "body": "A colour sheet is a flat unmodulated field. No gradients, no tints layered on tints; hierarchy comes from the rules and the tab edge.", "section": "colors" },
+      { "name": "The Typed Content Rule", "body": "Anything the applicant supplied or a machine counted (CV text, numbers, serials, dates) is Courier Prime with tabular figures; anything the form prints is Public Sans.", "section": "typography" },
+      { "name": "The Stack Not Glow Rule", "body": "Extra depth is another sheet behind, never a larger blur.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do colour whole output regions with one flat stock (white, canary, rose, sky) and keep tab and sheet the same colour.",
+      "Do set typed or counted content in Courier Prime with tabular figures.",
+      "Do keep one carbon-blue primary action per view.",
+      "Do make list items ledger rows with a typed serial and tabular figures.",
+      "Do keep placeholders and secondary text at muted ink (AA on sheet) in both themes.",
+      "Do keep keyword-coverage wording on the fit stamp."
+    ],
+    "donts": [
+      "Don't use serial red for anything but serial numbers, stamps, the ink dot, destructive actions and the suggested tag.",
+      "Don't use gradients, glass, blurred shadows or blobs; the glass-blob dashboard is the rejected anti-reference.",
+      "Don't raise radii above 3px (avatar excepted).",
+      "Don't put big-number metric strips in place of ledger rows.",
+      "Don't theme or restyle the sandboxed styled-CV iframe."
+    ]
+  }
+}

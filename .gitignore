@@ -7,3 +7,5 @@ node_modules/
 .DS_Store
 docs
 graphify-out/
+.impeccable/review/
+.impeccable/questions/

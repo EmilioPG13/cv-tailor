@@ -6,7 +6,7 @@ import { TEMPLATES } from '../data/templates.js';
 import { useTailor } from '../context/TailorContext.jsx';
 import {
   cn, Button, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent,
-  IconCheck,
+  EmptyNote, PageHeader, IconCheck,
 } from '../components/ui.jsx';
 
 const PAGE_W = 816;   // US Letter @96dpi
@@ -74,7 +74,7 @@ function TemplatePreview({ file, getToken }) {
   return (
     <div
       ref={boxRef}
-      className="relative w-full overflow-hidden rounded-lg border border-[var(--border)] bg-white"
+      className="relative w-full overflow-hidden rounded-[2px] border border-[var(--border)] bg-white"
       style={{ height: PAGE_H * scale }}
     >
       {html ? (
@@ -94,7 +94,7 @@ function TemplatePreview({ file, getToken }) {
           }}
         />
       ) : (
-        <div className="absolute inset-0 animate-pulse bg-[var(--muted)]/40" />
+        <div className="anim-shimmer absolute inset-0" />
       )}
     </div>
   );
@@ -151,37 +151,36 @@ export default function TemplatesPage({ lang }) {
   }
 
   return (
-    <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
-      <section className="anim-rise">
-        <h1 className="text-[22px] font-bold tracking-tight text-[var(--fg)] sm:text-[28px]">
-          {lang === 'es' ? 'Plantillas de CV' : 'CV Templates'}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--muted-fg)] max-w-2xl leading-relaxed">
-          {lang === 'es'
-            ? 'Explora cada diseño en vivo, busca o filtra por estilo, y fija el que quieras para tu próximo CV.'
-            : 'Browse every design live, search or filter by style, and pin the one you want for your next CV.'}
-        </p>
-      </section>
+    <main className="mx-auto max-w-[1240px] px-5 pb-24 pt-8 sm:px-8">
+      <PageHeader
+        title={lang === 'es' ? 'Plantillas de CV' : 'CV Templates'}
+        subtitle={lang === 'es'
+          ? 'Explora cada diseño en vivo, busca o filtra por estilo, y fija el que quieras para tu próximo CV.'
+          : 'Browse every design live, search or filter by style, and pin the one you want for your next CV.'}
+      />
 
       {/* Search + style filters */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
+          aria-label={lang === 'es' ? 'Buscar diseños' : 'Search designs'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={lang === 'es' ? 'Buscar diseños…' : 'Search designs…'}
-          className="glass-input w-full rounded-xl px-3.5 py-2 text-sm text-[var(--fg)] placeholder:text-[var(--muted-fg)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] transition-colors sm:max-w-xs"
+          className="field w-full sm:max-w-xs"
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div role="radiogroup" aria-label={lang === 'es' ? 'Estilo' : 'Style'} className="inline-flex flex-wrap divide-x divide-[var(--rule)] overflow-hidden rounded-[2px] border border-[var(--rule)]">
           {STYLE_FILTERS.map((s) => (
             <button
               key={s}
+              role="radio"
+              aria-checked={styleFilter === s}
               onClick={() => setStyleFilter(s)}
               className={cn(
-                'rounded-full px-3 py-1 text-[11px] font-medium transition-colors',
+                'h-9 px-3.5 text-[13px] font-semibold [@media(pointer:coarse)]:h-10',
                 styleFilter === s
-                  ? 'bg-[var(--accent)] text-[var(--accent-fg)]'
-                  : 'bg-[var(--muted)] text-[var(--muted-fg)] hover:text-[var(--fg)]'
+                  ? 'bg-[var(--fg)] text-[var(--sheet)]'
+                  : 'bg-[var(--sheet)] text-[var(--muted-fg)] hover:bg-[var(--muted)] hover:text-[var(--fg)]'
               )}
             >
               {STYLE_LABELS[s][lang === 'es' ? 'es' : 'en']}
@@ -192,32 +191,29 @@ export default function TemplatesPage({ lang }) {
 
       {/* Design gallery */}
       {loading ? (
-        <div className="mt-10 text-center text-sm text-[var(--muted-fg)]">
-          {lang === 'es' ? 'Cargando diseños…' : 'Loading designs…'}
+        <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => <div key={i} className="anim-shimmer h-96 rounded-[3px]" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-10 text-center text-sm text-[var(--muted-fg)]">
-          {lang === 'es' ? 'No hay diseños que coincidan.' : 'No designs match your search.'}
+        <div className="mt-7">
+          <EmptyNote title={lang === 'es' ? 'No hay diseños que coincidan.' : 'No designs match your search.'} />
         </div>
       ) : (
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((tpl, i) => {
+        <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((tpl) => {
             const isSelected = selectedTemplate === tpl.file;
             return (
               <Card
                 key={tpl.file}
                 className={cn(
                   'flex flex-col overflow-hidden',
-                  isSelected && 'ring-2 ring-[var(--accent)]',
-                  i === 0 && 'anim-rise',
-                  i === 1 && 'anim-rise-1',
-                  i === 2 && 'anim-rise-2',
+                  isSelected && 'outline-2 outline-offset-2 outline-[var(--accent)]'
                 )}
               >
-                <div className="p-3 pb-0">
+                <div className="bg-[var(--muted)] p-3">
                   <TemplatePreview file={tpl.file} getToken={getToken} />
                 </div>
-                <CardHeader className="pb-3">
+                <CardHeader className="pt-4">
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle>{tpl.name}</CardTitle>
                     <Badge variant="accent">
@@ -226,10 +222,10 @@ export default function TemplatesPage({ lang }) {
                   </div>
                   <CardDescription>{tpl.desc}</CardDescription>
                 </CardHeader>
-                <CardContent className="mt-auto pt-0">
+                <CardContent className="mt-auto">
                   <Button
                     variant={isSelected ? 'default' : 'primary'}
-                    size="sm"
+                    size="default"
                     className="w-full"
                     onClick={() => handleUseDesign(tpl)}
                   >
@@ -246,33 +242,33 @@ export default function TemplatesPage({ lang }) {
 
       {/* Starter content (text scaffolds) */}
       <section className="mt-16">
-        <h2 className="text-[17px] font-bold tracking-tight text-[var(--fg)] sm:text-[20px]">
+        <h2 className="text-[20px] font-bold tracking-[-0.01em] text-[var(--fg)]">
           {lang === 'es' ? 'Contenido inicial' : 'Starter content'}
         </h2>
-        <p className="mt-1 text-sm text-[var(--muted-fg)] max-w-2xl leading-relaxed">
+        <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-[var(--muted-fg)]">
           {lang === 'es'
             ? 'Scaffolds en blanco por tipo de rol. Elige uno para rellenar el editor y dale a Adaptar.'
             : 'Blank scaffolds for different role types. Pick one to fill the editor, then hit Tailor.'}
         </p>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {TEMPLATES.map((tpl) => (
             <Card key={tpl.id} className="flex flex-col">
-              <CardHeader>
+              <CardHeader className="pt-4">
                 <CardTitle>{lang === 'es' ? tpl.nameEs : tpl.nameEn}</CardTitle>
                 <CardDescription>{lang === 'es' ? tpl.descEs : tpl.descEn}</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 flex flex-col gap-3 flex-1">
+              <CardContent className="flex flex-1 flex-col gap-3">
                 <pre
-                  className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--muted)]/50 p-3 text-[10.5px] font-mono text-[var(--muted-fg)] leading-relaxed whitespace-pre-wrap"
-                  style={{ maxHeight: '6.5rem' }}
+                  className="overflow-hidden whitespace-pre-wrap rounded-[2px] border border-[var(--border)] bg-[var(--muted)] p-3 font-[family-name:var(--font-typed)] text-[12px] leading-relaxed text-[var(--typed)]"
+                  style={{ maxHeight: '7.5rem' }}
                 >
                   {(lang === 'es' ? tpl.textEs : tpl.textEn).split('\n').slice(0, 7).join('\n')}
                 </pre>
                 <div className="mt-auto">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     className="w-full"
                     onClick={() => handleUseScaffold(tpl)}
                   >

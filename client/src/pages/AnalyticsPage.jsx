@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 import {
-  Card, CardHeader, CardTitle, CardContent,
-  IconBolt, IconTarget,
+  Card, CardHeader, CardTitle, CardContent, EmptyNote, PageHeader,
 } from '../components/ui.jsx';
 
 export default function AnalyticsPage() {
@@ -26,64 +25,53 @@ export default function AnalyticsPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <main className="mx-auto max-w-[1320px] px-6 pb-24 pt-6">
-      <section className="anim-rise">
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--accent)]"><IconBolt size={20} /></span>
-          <h1 className="text-[22px] font-bold tracking-tight text-[var(--fg)] sm:text-[28px]">
-            Analytics
-          </h1>
-        </div>
-        <p className="mt-1 text-sm text-[var(--muted-fg)] max-w-xl leading-relaxed">
-          Your CV tailoring activity over the last 30 days.
-        </p>
-      </section>
+    <main className="mx-auto max-w-[1240px] px-5 pb-24 pt-8 sm:px-8">
+      <PageHeader
+        title="Analytics"
+        subtitle="Your CV tailoring activity over the last 30 days."
+      />
 
       {loading && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 anim-rise-1">
+        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 rounded-2xl anim-shimmer" />
+            <div key={i} className="anim-shimmer h-24 rounded-[3px]" />
           ))}
         </div>
       )}
 
       {!loading && data && (
-        <div className="mt-6 flex flex-col gap-6 anim-rise-1">
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-fg)]">Total Tailored</p>
-                <p className="mt-2 text-[36px] font-bold tabular-nums text-[var(--fg)]">{data.total}</p>
-                <p className="text-xs text-[var(--muted-fg)]">CVs tailored all time</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-fg)]">Last 30 Days</p>
-                <p className="mt-2 text-[36px] font-bold tabular-nums text-[var(--fg)]">
-                  {data.perDay.reduce((s, d) => s + d.count, 0)}
-                </p>
-                <p className="text-xs text-[var(--muted-fg)]">CVs in the past month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-fg)]">Top Role</p>
-                <p className="mt-2 text-[18px] font-bold text-[var(--fg)] truncate">
-                  {data.topRoles[0]?.role ?? '—'}
-                </p>
-                <p className="text-xs text-[var(--muted-fg)]">{data.topRoles[0]?.count ?? 0} applications</p>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="anim-rise-1 mt-7 flex flex-col gap-6">
+          {/* Totals: one ruled summary sheet */}
+          <dl className="sheet divide-y divide-dashed divide-[var(--rule)]">
+            <div className="flex items-baseline justify-between gap-4 px-5 py-3">
+              <dt className="min-w-0">
+                <span className="label">Total Tailored</span>
+                <span className="ml-3 text-[13px] text-[var(--muted-fg)]">CVs tailored all time</span>
+              </dt>
+              <dd className="min-w-0 truncate font-[family-name:var(--font-typed)] text-[18px] font-bold tabular-nums text-[var(--typed)]">{data.total}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4 px-5 py-3">
+              <dt className="min-w-0">
+                <span className="label">Last 30 Days</span>
+                <span className="ml-3 text-[13px] text-[var(--muted-fg)]">CVs in the past month</span>
+              </dt>
+              <dd className="min-w-0 truncate font-[family-name:var(--font-typed)] text-[18px] font-bold tabular-nums text-[var(--typed)]">{data.perDay.reduce((s, d) => s + d.count, 0)}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4 px-5 py-3">
+              <dt className="min-w-0">
+                <span className="label">Top Role</span>
+                <span className="ml-3 text-[13px] text-[var(--muted-fg)]">{data.topRoles[0]?.count ?? 0} applications</span>
+              </dt>
+              <dd className="min-w-0 truncate font-[family-name:var(--font-typed)] text-[18px] font-bold tabular-nums text-[var(--typed)]">{data.topRoles[0]?.role ?? '—'}</dd>
+            </div>
+          </dl>
 
           {/* Bar chart: CVs per day */}
           <Card>
-            <CardHeader>
+            <CardHeader className="border-b border-[var(--rule)] pb-3">
               <CardTitle>CVs per Day (Last 30 Days)</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-5">
               <BarChart data={data.perDay} />
             </CardContent>
           </Card>
@@ -91,15 +79,15 @@ export default function AnalyticsPage() {
           {/* Top roles */}
           {data.topRoles.length > 0 && (
             <Card>
-              <CardHeader>
+              <CardHeader className="border-b border-[var(--rule)] pb-3">
                 <CardTitle>Top Job Titles</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <ul className="flex flex-col divide-y divide-[var(--border)]">
+              <CardContent className="pt-2">
+                <ul className="flex flex-col divide-y divide-dashed divide-[var(--rule)]">
                   {data.topRoles.map(({ role, count }, i) => (
-                    <li key={i} className="flex items-center justify-between py-2.5">
-                      <span className="text-[13px] text-[var(--fg)] truncate">{role}</span>
-                      <span className="text-[12px] tabular-nums font-semibold text-[var(--accent)] ml-4 shrink-0">{count}</span>
+                    <li key={i} className="flex items-center justify-between py-3">
+                      <span className="truncate text-[14px] text-[var(--fg)]">{role}</span>
+                      <span className="ml-4 shrink-0 font-[family-name:var(--font-typed)] text-[14px] font-bold tabular-nums text-[var(--typed)]">{count}</span>
                     </li>
                   ))}
                 </ul>
@@ -110,12 +98,8 @@ export default function AnalyticsPage() {
       )}
 
       {!loading && !data && (
-        <div className="flex flex-col items-center gap-4 py-16 text-center mt-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] text-[var(--muted-fg)]">
-            <IconTarget size={22} />
-          </div>
-          <p className="text-sm font-medium text-[var(--fg)]">No data yet.</p>
-          <p className="mt-1 text-xs text-[var(--muted-fg)]">Tailor your first CV to see analytics here.</p>
+        <div className="mx-auto mt-10 max-w-md">
+          <EmptyNote title="No data yet." body="Tailor your first CV to see analytics here." />
         </div>
       )}
     </main>
@@ -125,7 +109,7 @@ export default function AnalyticsPage() {
 function BarChart({ data }) {
   if (!data || data.length === 0) {
     return (
-      <p className="text-xs text-[var(--muted-fg)] py-4 text-center">
+      <p className="py-4 text-[13px] text-[var(--muted-fg)]">
         No data for this period.
       </p>
     );
@@ -144,7 +128,10 @@ function BarChart({ data }) {
         height={chartH + 24}
         viewBox={`0 0 ${totalW} ${chartH + 24}`}
         style={{ width: '100%', height: 'auto', minHeight: chartH + 24 }}
+        role="img"
+        aria-label="CVs per day over the last 30 days"
       >
+        <line x1="0" x2={totalW} y1={chartH + 0.5} y2={chartH + 0.5} stroke="var(--rule)" strokeWidth="1" />
         {data.map((d, i) => {
           const barH = Math.max(2, (d.count / max) * chartH);
           const x = i * (barW + gap);
@@ -158,9 +145,8 @@ function BarChart({ data }) {
                 y={y}
                 width={barW}
                 height={barH}
-                rx={2}
                 fill="var(--accent)"
-                opacity={d.count === 0 ? 0.15 : 0.85}
+                opacity={d.count === 0 ? 0.18 : 1}
               />
               {d.count > 0 && (
                 <title>{d.date}: {d.count} CV{d.count !== 1 ? 's' : ''}</title>

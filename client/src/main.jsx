@@ -16,9 +16,20 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
 }
 
+// Clerk renders outside our CSS variables, so its modal gets the pad's ink and
+// typeface as literal values.
+const clerkAppearance = {
+  variables: {
+    colorPrimary: '#1f2f8f',
+    colorText: '#171a21',
+    borderRadius: '2px',
+    fontFamily: '"Public Sans", system-ui, sans-serif',
+  },
+};
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} appearance={clerkAppearance}>
       <BrowserRouter>
         <App />
       </BrowserRouter>
