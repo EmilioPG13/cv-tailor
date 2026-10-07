@@ -723,7 +723,7 @@ export function OutputCard({ t, status, progress, result, tab, setTab, copy, cop
     <section>
       <div className="no-print flex flex-wrap items-end gap-x-1 gap-y-2">
         {hasResult ? (
-          <div role="tablist" aria-label={t.output} className="flex items-end gap-1 overflow-x-auto pt-1" onKeyDown={onTabKeyDown}>
+          <div role="tablist" aria-label={t.output} className="flex items-end gap-1 pt-1 max-sm:overflow-x-auto max-sm:[scrollbar-width:none]" onKeyDown={onTabKeyDown}>
             {tabItems.map(it => (
               <button
                 key={it.value}
