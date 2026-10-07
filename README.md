@@ -8,6 +8,14 @@ CV Tailor is a bilingual (English / Spanish) web app that rewrites your CV to ma
 
 You paste (or upload) your existing CV, paste a job description (or scrape it from a URL), pick a visual style, and the app produces three things: a list of rewritten bullet points, a full cover letter, and a designed one-page CV you can download or print.
 
+![Tailored bullets: each rewritten line is numbered, with the keywords it matched from the job description](assets/tailored-bullets.png)
+
+| The styled CV, ready to print to PDF | Live template previews |
+| --- | --- |
+| ![A styled one-page CV generated from the sample data](assets/styled-cv.png) | ![The template gallery with Classic, Modern, Creative and Minimal designs](assets/templates.png) |
+
+*Screenshots use the built-in sample CV and a sample job description, not real data.*
+
 ---
 
 ## Table of Contents
