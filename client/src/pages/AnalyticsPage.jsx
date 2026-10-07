@@ -20,7 +20,7 @@ export default function AnalyticsPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setData(res);
-      } catch {}
+      } catch { /* best-effort */ }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

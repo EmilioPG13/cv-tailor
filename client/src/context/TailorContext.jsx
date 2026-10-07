@@ -11,7 +11,8 @@ const TailorContext = createContext(null);
 function splitSectionsFallback(text) {
   const cvIdx   = text.search(/^(?:[\d.]+\s*)?(TAILORED\s+CV|CV\s+ADAPTADO|CV\s+BULLETS?)\s*$/im);
   const coverIdx = text.search(/^(?:[\d.]+\s*)?(COVER\s+LETTER|CARTA\s+DE\s+PRESENTACI[ÓO]N)\s*$/im);
-  let tailoredCV = '', coverText = '';
+  let tailoredCV;
+  let coverText = '';
   if (cvIdx >= 0) {
     const cvStart = text.indexOf('\n', cvIdx) + 1;
     const cvEnd = coverIdx >= 0 ? coverIdx : text.length;
@@ -35,11 +36,11 @@ function parseApiResult(data, lang) {
     ? { tailoredCV: data.tailoredCv, coverText: data.coverLetter ?? '' }
     : splitSectionsFallback(text);
 
-  const bullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => /^[•\-\*]/.test(l) && l.length > 10)
-    .map(l => ({ tag: 'REWRITTEN', text: l.replace(/^[•\-\*]\s+/, '').trim(), original: '', match: [] }))
+  const bullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => /^[•\-*]/.test(l) && l.length > 10)
+    .map(l => ({ tag: 'REWRITTEN', text: l.replace(/^[•\-*]\s+/, '').trim(), original: '', match: [] }))
     .filter(b => b.text.length > 5);
   const fallbackBullets = tailoredCV.split('\n').map(l => l.trim()).filter(l => l.length > 10)
-    .map(l => ({ tag: 'REWRITTEN', text: l.replace(/^[•\-\*\d]+\.?\s+/, '').trim(), original: '', match: [] }))
+    .map(l => ({ tag: 'REWRITTEN', text: l.replace(/^[•\-*\d]+\.?\s+/, '').trim(), original: '', match: [] }))
     .filter(b => b.text.length > 5);
   return {
     bullets: bullets.length > 0 ? bullets : fallbackBullets.length > 0 ? fallbackBullets : [{ tag: 'REWRITTEN', text: tailoredCV || text, original: '', match: [] }],
@@ -62,7 +63,7 @@ function extractJobTitle(jd) {
 }
 
 function extractCompanyName(jd) {
-  const match = (jd || '').match(/[—\-–|·]\s*([^,\n\(]+)/);
+  const match = (jd || '').match(/[—\-–|·]\s*([^,\n(]+)/);
   return match ? match[1].trim().slice(0, 30) : 'Company';
 }
 

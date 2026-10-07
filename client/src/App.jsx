@@ -467,7 +467,7 @@ function TabHelp({ tabKey, text }) {
 
   const dismiss = () => {
     setDismissed(true);
-    try { localStorage.setItem(storageKey, '1'); } catch {}
+    try { localStorage.setItem(storageKey, '1'); } catch { /* best-effort */ }
   };
 
   return (
@@ -1065,7 +1065,7 @@ function TailorPage({ t, lang, tweaks }) {
           params: { summary: 1, limit: 5 },
         });
         setRecentHistory(data.map(e => ({ ...e, when: relativeTime(e.createdAt) })));
-      } catch {}
+      } catch { /* best-effort */ }
     })();
   }, [historyVersion, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1082,7 +1082,7 @@ function TailorPage({ t, lang, tweaks }) {
   };
 
   const copy = async (key, text) => {
-    try { await navigator.clipboard.writeText(text); } catch {}
+    try { await navigator.clipboard.writeText(text); } catch { /* best-effort */ }
     setCopied(key);
     setTimeout(() => setCopied(null), 1200);
   };

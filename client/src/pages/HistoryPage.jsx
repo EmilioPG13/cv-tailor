@@ -35,7 +35,7 @@ export default function HistoryPage({ lang }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEntries(data);
-      } catch {}
+      } catch { /* best-effort */ }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -49,7 +49,7 @@ export default function HistoryPage({ lang }) {
       });
       setEntries(prev => prev.filter(e => e.id !== id));
       if (expanded === id) setExpanded(null);
-    } catch {}
+    } catch { /* best-effort */ }
     setDeleting(null);
   }
 

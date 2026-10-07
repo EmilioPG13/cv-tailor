@@ -76,7 +76,7 @@ export default function AdminPage() {
       setSettings(s => ({ ...s, [key]: value }));
       setSavedKey(key);
       setTimeout(() => setSavedKey(k => k === key ? null : k), 2000);
-    } catch {}
+    } catch { /* best-effort */ }
     setSavingKey(null);
   }
 
@@ -99,7 +99,7 @@ export default function AdminPage() {
         setStats(s => s ? { ...s, totalTemplates: (s.totalTemplates ?? 0) + 1 } : s);
       }
       cancelForm();
-    } catch {}
+    } catch { /* best-effort */ }
     setSaving(false);
   }
 
@@ -109,7 +109,7 @@ export default function AdminPage() {
       await axios.delete(`${API}/api/admin/templates/${id}`, { headers });
       setTemplates(ts => ts.filter(t => t.id !== id));
       setStats(s => s ? { ...s, totalTemplates: Math.max(0, (s.totalTemplates ?? 1) - 1) } : s);
-    } catch {}
+    } catch { /* best-effort */ }
   }
 
   if (loading) {
